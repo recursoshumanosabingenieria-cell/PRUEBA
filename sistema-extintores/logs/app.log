@@ -1,0 +1,614 @@
+2025-10-23 15:26:43,327 [INFO] [LOGS] Logs limpiados por usuario: Usuario Temporal
+2025-10-23 15:26:57,603 [INFO] [SERVIDORES] 2 servidores detenidos por usuario: Usuario Temporal
+2025-10-23 15:27:15,469 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 15:27:15,473 [INFO] 
+============================================================
+2025-10-23 15:27:15,474 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 15:27:15,474 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 15:27:15,475 [INFO] ============================================================
+2025-10-23 15:27:15,475 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 15:27:15,476 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 15:27:15,476 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 15:27:15,477 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 15:27:15,477 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 15:27:15,478 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 15:27:15,479 [INFO]   - Clientes guardados correctamente
+2025-10-23 15:27:15,482 [INFO]   - Errores y warnings detallados
+2025-10-23 15:27:15,483 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 15:27:15,484 [INFO] ============================================================
+
+2025-10-23 15:30:43,931 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 15:30:43,936 [INFO] 
+============================================================
+2025-10-23 15:30:43,936 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 15:30:43,936 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 15:30:43,936 [INFO] ============================================================
+2025-10-23 15:30:43,937 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 15:30:43,937 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 15:30:43,937 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 15:30:43,938 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 15:30:43,939 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 15:30:43,939 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 15:30:43,940 [INFO]   - Clientes guardados correctamente
+2025-10-23 15:30:43,940 [INFO]   - Errores y warnings detallados
+2025-10-23 15:30:43,941 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 15:30:43,941 [INFO] ============================================================
+
+2025-10-23 15:32:24,252 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 15:32:24,258 [INFO] 
+============================================================
+2025-10-23 15:32:24,258 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 15:32:24,258 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 15:32:24,258 [INFO] ============================================================
+2025-10-23 15:32:24,259 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 15:32:24,259 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 15:32:24,260 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 15:32:24,260 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 15:32:24,260 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 15:32:24,261 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 15:32:24,261 [INFO]   - Clientes guardados correctamente
+2025-10-23 15:32:24,261 [INFO]   - Errores y warnings detallados
+2025-10-23 15:32:24,262 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 15:32:24,262 [INFO] ============================================================
+
+2025-10-23 15:32:51,790 [INFO] 
+[MARCAR-RECOGIDO] Orden ID: 7
+2025-10-23 15:32:51,792 [INFO] [MARCAR-RECOGIDO] ===== INICIO =====
+2025-10-23 15:32:51,793 [INFO] [MARCAR-RECOGIDO] Estado en BD ANTES: orden.recogido = False
+2025-10-23 15:32:51,794 [INFO] [MARCAR-RECOGIDO] Nuevo valor solicitado: True
+2025-10-23 15:32:51,795 [INFO] [MARCAR-RECOGIDO] Ya fue marcado alguna vez (permanente): False
+2025-10-23 15:32:51,797 [INFO] [MARCAR-RECOGIDO] Extintores detalle: 1
+2025-10-23 15:32:51,826 [INFO] [MARCAR-RECOGIDO] ===== RESULTADO =====
+2025-10-23 15:32:51,827 [INFO] [MARCAR-RECOGIDO] Estado en BD DESPUÉS: orden.recogido = True
+2025-10-23 15:32:51,828 [INFO] [MARCAR-RECOGIDO] Campo permanente DESPUÉS: marcado_recogido_alguna_vez = True
+2025-10-23 15:32:51,829 [INFO] [MARCAR-RECOGIDO] Es primera vez: True
+2025-10-23 15:32:51,829 [INFO] [MARCAR-RECOGIDO] Lógica: recogido=True AND NOT ya_fue_marcado_antes=False
+2025-10-23 15:32:56,833 [INFO] 
+[EXTINTOR UPDATE] ID: 416
+2025-10-23 15:32:56,837 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': '', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 15:32:56,838 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 15:32:56,840 [INFO] 
+[EXTINTOR UPDATE] ID: 417
+2025-10-23 15:32:56,841 [INFO] [EXTINTOR UPDATE] Marca: None
+2025-10-23 15:32:56,842 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': '', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 15:32:56,843 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 15:32:56,844 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 15:32:56,845 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 15:32:56,846 [INFO] [EXTINTOR UPDATE] Marca: None
+2025-10-23 15:32:56,849 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 15:32:56,850 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 15:32:56,866 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 15:32:56,879 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 15:32:56,893 [INFO] 
+[ENVIAR-REVISION] ========== INICIO ==========
+2025-10-23 15:32:56,894 [INFO] [ENVIAR-REVISION] Orden ID: 7
+2025-10-23 15:32:56,896 [INFO] [ENVIAR-REVISION] Datos recibidos: {'fecha_recarga_seleccionada': '2025-10-01'}
+2025-10-23 15:32:56,897 [INFO] [ENVIAR-REVISION] Content-Type: application/json
+2025-10-23 15:32:56,897 [INFO] [ENVIAR-REVISION] ✅ Primera vez enviado a oficina - Marcado permanentemente
+2025-10-23 15:32:56,897 [INFO] [ENVIAR-REVISION] ✅ Fecha recarga guardada: 2025-10-01
+2025-10-23 15:32:56,904 [INFO] [ENVIAR-REVISION] ✅ Cambios guardados en BD
+2025-10-23 15:32:56,905 [INFO] [ENVIAR-REVISION] ========== FIN ==========
+
+2025-10-23 15:43:14,141 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 15:43:14,147 [INFO] 
+============================================================
+2025-10-23 15:43:14,148 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 15:43:14,148 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 15:43:14,148 [INFO] ============================================================
+2025-10-23 15:43:14,148 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 15:43:14,148 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 15:43:14,148 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 15:43:14,148 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 15:43:14,149 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 15:43:14,149 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 15:43:14,149 [INFO]   - Clientes guardados correctamente
+2025-10-23 15:43:14,149 [INFO]   - Errores y warnings detallados
+2025-10-23 15:43:14,149 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 15:43:14,149 [INFO] ============================================================
+
+2025-10-23 15:43:39,380 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 15:43:39,386 [INFO] 
+============================================================
+2025-10-23 15:43:39,386 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 15:43:39,386 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 15:43:39,386 [INFO] ============================================================
+2025-10-23 15:43:39,386 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 15:43:39,386 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 15:43:39,387 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 15:43:39,387 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 15:43:39,387 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 15:43:39,387 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 15:43:39,387 [INFO]   - Clientes guardados correctamente
+2025-10-23 15:43:39,387 [INFO]   - Errores y warnings detallados
+2025-10-23 15:43:39,387 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 15:43:39,387 [INFO] ============================================================
+
+2025-10-23 15:51:06,867 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 15:51:06,873 [INFO] 
+============================================================
+2025-10-23 15:51:06,874 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 15:51:06,874 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 15:51:06,874 [INFO] ============================================================
+2025-10-23 15:51:06,874 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 15:51:06,874 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 15:51:06,875 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 15:51:06,875 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 15:51:06,875 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 15:51:06,875 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 15:51:06,875 [INFO]   - Clientes guardados correctamente
+2025-10-23 15:51:06,875 [INFO]   - Errores y warnings detallados
+2025-10-23 15:51:06,875 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 15:51:06,875 [INFO] ============================================================
+
+2025-10-23 16:03:25,363 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 16:03:25,370 [INFO] 
+============================================================
+2025-10-23 16:03:25,371 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 16:03:25,371 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 16:03:25,371 [INFO] ============================================================
+2025-10-23 16:03:25,371 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 16:03:25,372 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 16:03:25,372 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 16:03:25,372 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 16:03:25,372 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 16:03:25,372 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 16:03:25,372 [INFO]   - Clientes guardados correctamente
+2025-10-23 16:03:25,372 [INFO]   - Errores y warnings detallados
+2025-10-23 16:03:25,372 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 16:03:25,372 [INFO] ============================================================
+
+2025-10-23 16:14:02,788 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 16:14:02,792 [INFO] 
+============================================================
+2025-10-23 16:14:02,793 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 16:14:02,793 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 16:14:02,795 [INFO] ============================================================
+2025-10-23 16:14:02,795 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 16:14:02,795 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 16:14:02,795 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 16:14:02,795 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 16:14:02,795 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 16:14:02,796 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 16:14:02,796 [INFO]   - Clientes guardados correctamente
+2025-10-23 16:14:02,796 [INFO]   - Errores y warnings detallados
+2025-10-23 16:14:02,796 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 16:14:02,796 [INFO] ============================================================
+
+2025-10-23 16:23:16,290 [INFO] 
+[EXTINTOR UPDATE] ID: 416
+2025-10-23 16:23:16,291 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': 'h', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:23:16,292 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:23:16,292 [INFO] [EXTINTOR UPDATE] Marca: h
+2025-10-23 16:23:16,292 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:23:16,292 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:23:16,324 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:23:16,596 [INFO] 
+[EXTINTOR UPDATE] ID: 417
+2025-10-23 16:23:16,597 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': '', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:23:16,597 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:23:16,598 [INFO] [EXTINTOR UPDATE] Marca: None
+2025-10-23 16:23:16,598 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:23:16,598 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:23:16,600 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:23:16,918 [INFO] 
+[ENVIAR-REVISION] ========== INICIO ==========
+2025-10-23 16:23:16,918 [INFO] [ENVIAR-REVISION] Orden ID: 7
+2025-10-23 16:23:16,922 [INFO] [ENVIAR-REVISION] Datos recibidos: {'fecha_recarga_seleccionada': '2025-10-01'}
+2025-10-23 16:23:16,922 [INFO] [ENVIAR-REVISION] Content-Type: application/json
+2025-10-23 16:23:16,922 [INFO] [ENVIAR-REVISION] ℹ️ Ya estaba marcado como enviado a oficina
+2025-10-23 16:23:16,923 [INFO] [ENVIAR-REVISION] ✅ Fecha recarga guardada: 2025-10-01
+2025-10-23 16:23:16,942 [INFO] [ENVIAR-REVISION] ✅ Cambios guardados en BD
+2025-10-23 16:23:16,943 [INFO] [ENVIAR-REVISION] ========== FIN ==========
+
+2025-10-23 16:23:33,565 [INFO] 
+[EXTINTOR UPDATE] ID: 416
+2025-10-23 16:23:33,566 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': 'h', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:23:33,566 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:23:33,566 [INFO] [EXTINTOR UPDATE] Marca: h
+2025-10-23 16:23:33,566 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:23:33,566 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:23:33,567 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:23:33,883 [INFO] 
+[EXTINTOR UPDATE] ID: 417
+2025-10-23 16:23:33,884 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': 'g', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:23:33,884 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:23:33,884 [INFO] [EXTINTOR UPDATE] Marca: g
+2025-10-23 16:23:33,885 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:23:33,885 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:23:33,900 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:23:34,220 [INFO] 
+[ENVIAR-REVISION] ========== INICIO ==========
+2025-10-23 16:23:34,221 [INFO] [ENVIAR-REVISION] Orden ID: 7
+2025-10-23 16:23:34,223 [INFO] [ENVIAR-REVISION] Datos recibidos: {'fecha_recarga_seleccionada': '2025-10-01'}
+2025-10-23 16:23:34,223 [INFO] [ENVIAR-REVISION] Content-Type: application/json
+2025-10-23 16:23:34,223 [INFO] [ENVIAR-REVISION] ℹ️ Ya estaba marcado como enviado a oficina
+2025-10-23 16:23:34,223 [INFO] [ENVIAR-REVISION] ✅ Fecha recarga guardada: 2025-10-01
+2025-10-23 16:23:34,235 [INFO] [ENVIAR-REVISION] ✅ Cambios guardados en BD
+2025-10-23 16:23:34,235 [INFO] [ENVIAR-REVISION] ========== FIN ==========
+
+2025-10-23 16:35:15,225 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 16:35:15,238 [INFO] 
+============================================================
+2025-10-23 16:35:15,239 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 16:35:15,239 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 16:35:15,240 [INFO] ============================================================
+2025-10-23 16:35:15,241 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 16:35:15,241 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 16:35:15,241 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 16:35:15,241 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 16:35:15,241 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 16:35:15,242 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 16:35:15,242 [INFO]   - Clientes guardados correctamente
+2025-10-23 16:35:15,242 [INFO]   - Errores y warnings detallados
+2025-10-23 16:35:15,242 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 16:35:15,242 [INFO] ============================================================
+
+2025-10-23 16:40:26,961 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 16:40:26,966 [INFO] 
+============================================================
+2025-10-23 16:40:26,966 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 16:40:26,966 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 16:40:26,967 [INFO] ============================================================
+2025-10-23 16:40:26,967 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 16:40:26,967 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 16:40:26,967 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 16:40:26,967 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 16:40:26,967 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 16:40:26,967 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 16:40:26,967 [INFO]   - Clientes guardados correctamente
+2025-10-23 16:40:26,968 [INFO]   - Errores y warnings detallados
+2025-10-23 16:40:26,968 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 16:40:26,968 [INFO] ============================================================
+
+2025-10-23 16:41:03,601 [INFO] 
+[EXTINTOR UPDATE] ID: 416
+2025-10-23 16:41:03,603 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': '7', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:41:03,604 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:41:03,605 [INFO] [EXTINTOR UPDATE] Marca: 7
+2025-10-23 16:41:03,607 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:41:03,609 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:41:03,637 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:41:03,906 [INFO] 
+[EXTINTOR UPDATE] ID: 417
+2025-10-23 16:41:03,907 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': 'g', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:41:03,907 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:41:03,908 [INFO] [EXTINTOR UPDATE] Marca: g
+2025-10-23 16:41:03,908 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:41:03,909 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:41:03,910 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:41:04,227 [INFO] 
+[ENVIAR-REVISION] ========== INICIO ==========
+2025-10-23 16:41:04,228 [INFO] [ENVIAR-REVISION] Orden ID: 7
+2025-10-23 16:41:04,231 [INFO] [ENVIAR-REVISION] Datos recibidos: {'fecha_recarga_seleccionada': '2025-10-01'}
+2025-10-23 16:41:04,232 [INFO] [ENVIAR-REVISION] Content-Type: application/json
+2025-10-23 16:41:04,232 [INFO] [ENVIAR-REVISION] ℹ️ Ya estaba marcado como enviado a oficina
+2025-10-23 16:41:04,236 [INFO] [ENVIAR-REVISION] ✅ Fecha recarga guardada: 2025-10-01
+2025-10-23 16:41:04,259 [INFO] [ENVIAR-REVISION] ✅ Cambios guardados en BD
+2025-10-23 16:41:04,261 [INFO] [ENVIAR-REVISION] ========== FIN ==========
+
+2025-10-23 16:43:56,601 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-23 16:43:56,607 [INFO] 
+============================================================
+2025-10-23 16:43:56,608 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-23 16:43:56,608 [INFO]   Consulta RUC: API Factiliza
+2025-10-23 16:43:56,609 [INFO] ============================================================
+2025-10-23 16:43:56,609 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-23 16:43:56,609 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-23 16:43:56,609 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-23 16:43:56,609 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-23 16:43:56,609 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-23 16:43:56,609 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-23 16:43:56,609 [INFO]   - Clientes guardados correctamente
+2025-10-23 16:43:56,609 [INFO]   - Errores y warnings detallados
+2025-10-23 16:43:56,609 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-23 16:43:56,609 [INFO] ============================================================
+
+2025-10-23 16:44:15,613 [INFO] 
+[EXTINTOR UPDATE] ID: 416
+2025-10-23 16:44:15,614 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': 'h', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:44:15,614 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:44:15,614 [INFO] [EXTINTOR UPDATE] Marca: h
+2025-10-23 16:44:15,614 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:44:15,615 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:44:15,643 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:44:15,912 [INFO] 
+[EXTINTOR UPDATE] ID: 417
+2025-10-23 16:44:15,912 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': 'g', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:44:15,912 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:44:15,912 [INFO] [EXTINTOR UPDATE] Marca: g
+2025-10-23 16:44:15,913 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:44:15,913 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:44:15,914 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:44:16,235 [INFO] 
+[ENVIAR-REVISION] ========== INICIO ==========
+2025-10-23 16:44:16,235 [INFO] [ENVIAR-REVISION] Orden ID: 7
+2025-10-23 16:44:16,237 [INFO] [ENVIAR-REVISION] Datos recibidos: {'fecha_recarga_seleccionada': '2025-10-01'}
+2025-10-23 16:44:16,237 [INFO] [ENVIAR-REVISION] Content-Type: application/json
+2025-10-23 16:44:16,237 [INFO] [ENVIAR-REVISION] ℹ️ Ya estaba marcado como enviado a oficina
+2025-10-23 16:44:16,241 [INFO] [ENVIAR-REVISION] ✅ Fecha recarga guardada: 2025-10-01
+2025-10-23 16:44:16,244 [INFO] [ENVIAR-REVISION] ⚠️ Revisión desmarcada por cambio CONFIRMADO en Registro
+2025-10-23 16:44:16,262 [INFO] [ENVIAR-REVISION] ✅ Cambios guardados en BD
+2025-10-23 16:44:16,266 [INFO] [ENVIAR-REVISION] ========== FIN ==========
+
+2025-10-23 16:44:30,921 [INFO] 
+[EXTINTOR UPDATE] ID: 416
+2025-10-23 16:44:30,922 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': '4', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:44:30,922 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:44:30,922 [INFO] [EXTINTOR UPDATE] Marca: 4
+2025-10-23 16:44:30,922 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:44:30,923 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:44:30,952 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:44:31,227 [INFO] 
+[EXTINTOR UPDATE] ID: 417
+2025-10-23 16:44:31,227 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '04 Kg.', 'marca': 'g', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:44:31,227 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:44:31,228 [INFO] [EXTINTOR UPDATE] Marca: g
+2025-10-23 16:44:31,228 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:44:31,228 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:44:31,230 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:44:31,552 [INFO] 
+[ENVIAR-REVISION] ========== INICIO ==========
+2025-10-23 16:44:31,553 [INFO] [ENVIAR-REVISION] Orden ID: 7
+2025-10-23 16:44:31,555 [INFO] [ENVIAR-REVISION] Datos recibidos: {'fecha_recarga_seleccionada': '2025-10-01'}
+2025-10-23 16:44:31,556 [INFO] [ENVIAR-REVISION] Content-Type: application/json
+2025-10-23 16:44:31,556 [INFO] [ENVIAR-REVISION] ℹ️ Ya estaba marcado como enviado a oficina
+2025-10-23 16:44:31,562 [INFO] [ENVIAR-REVISION] ✅ Fecha recarga guardada: 2025-10-01
+2025-10-23 16:44:31,584 [INFO] [ENVIAR-REVISION] ✅ Cambios guardados en BD
+2025-10-23 16:44:31,591 [INFO] [ENVIAR-REVISION] ========== FIN ==========
+
+2025-10-23 16:47:20,574 [INFO] 
+[MARCAR-RECOGIDO] Orden ID: 6
+2025-10-23 16:47:20,578 [INFO] [MARCAR-RECOGIDO] ===== INICIO =====
+2025-10-23 16:47:20,579 [INFO] [MARCAR-RECOGIDO] Estado en BD ANTES: orden.recogido = False
+2025-10-23 16:47:20,580 [INFO] [MARCAR-RECOGIDO] Nuevo valor solicitado: True
+2025-10-23 16:47:20,580 [INFO] [MARCAR-RECOGIDO] Ya fue marcado alguna vez (permanente): False
+2025-10-23 16:47:20,583 [INFO] [MARCAR-RECOGIDO] Extintores detalle: 1
+2025-10-23 16:47:20,610 [INFO] [MARCAR-RECOGIDO] ===== RESULTADO =====
+2025-10-23 16:47:20,611 [INFO] [MARCAR-RECOGIDO] Estado en BD DESPUÉS: orden.recogido = True
+2025-10-23 16:47:20,611 [INFO] [MARCAR-RECOGIDO] Campo permanente DESPUÉS: marcado_recogido_alguna_vez = True
+2025-10-23 16:47:20,612 [INFO] [MARCAR-RECOGIDO] Es primera vez: True
+2025-10-23 16:47:20,612 [INFO] [MARCAR-RECOGIDO] Lógica: recogido=True AND NOT ya_fue_marcado_antes=False
+2025-10-23 16:47:25,420 [INFO] 
+[EXTINTOR UPDATE] ID: 414
+2025-10-23 16:47:25,421 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'PQS', 'capacidad': '01 Kg.', 'marca': '', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:47:25,422 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:47:25,423 [INFO] [EXTINTOR UPDATE] Marca: None
+2025-10-23 16:47:25,423 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:47:25,424 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:47:25,457 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:47:25,725 [INFO] 
+[EXTINTOR UPDATE] ID: 415
+2025-10-23 16:47:25,726 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'PQS', 'capacidad': '01 Kg.', 'marca': '', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:47:25,727 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:47:25,728 [INFO] [EXTINTOR UPDATE] Marca: None
+2025-10-23 16:47:25,730 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:47:25,732 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:47:25,757 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:47:26,083 [INFO] 
+[ENVIAR-REVISION] ========== INICIO ==========
+2025-10-23 16:47:26,084 [INFO] [ENVIAR-REVISION] Orden ID: 6
+2025-10-23 16:47:26,086 [INFO] [ENVIAR-REVISION] Datos recibidos: {'fecha_recarga_seleccionada': '2025-10-01'}
+2025-10-23 16:47:26,086 [INFO] [ENVIAR-REVISION] Content-Type: application/json
+2025-10-23 16:47:26,087 [INFO] [ENVIAR-REVISION] ✅ Primera vez enviado a oficina - Marcado permanentemente
+2025-10-23 16:47:26,089 [INFO] [ENVIAR-REVISION] ✅ Fecha recarga guardada: 2025-10-01
+2025-10-23 16:47:26,107 [INFO] [ENVIAR-REVISION] ✅ Cambios guardados en BD
+2025-10-23 16:47:26,111 [INFO] [ENVIAR-REVISION] ========== FIN ==========
+
+2025-10-23 16:49:30,137 [INFO] 
+[MARCAR-RECOGIDO] Orden ID: 3
+2025-10-23 16:49:30,140 [INFO] [MARCAR-RECOGIDO] ===== INICIO =====
+2025-10-23 16:49:30,140 [INFO] [MARCAR-RECOGIDO] Estado en BD ANTES: orden.recogido = False
+2025-10-23 16:49:30,141 [INFO] [MARCAR-RECOGIDO] Nuevo valor solicitado: True
+2025-10-23 16:49:30,142 [INFO] [MARCAR-RECOGIDO] Ya fue marcado alguna vez (permanente): False
+2025-10-23 16:49:30,144 [INFO] [MARCAR-RECOGIDO] Extintores detalle: 1
+2025-10-23 16:49:30,160 [INFO] [MARCAR-RECOGIDO] ===== RESULTADO =====
+2025-10-23 16:49:30,161 [INFO] [MARCAR-RECOGIDO] Estado en BD DESPUÉS: orden.recogido = True
+2025-10-23 16:49:30,162 [INFO] [MARCAR-RECOGIDO] Campo permanente DESPUÉS: marcado_recogido_alguna_vez = True
+2025-10-23 16:49:30,163 [INFO] [MARCAR-RECOGIDO] Es primera vez: True
+2025-10-23 16:49:30,163 [INFO] [MARCAR-RECOGIDO] Lógica: recogido=True AND NOT ya_fue_marcado_antes=False
+2025-10-23 16:49:45,327 [INFO] 
+[EXTINTOR UPDATE] ID: 408
+2025-10-23 16:49:45,327 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '02 Kg.', 'marca': 'da', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:49:45,327 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:49:45,327 [INFO] [EXTINTOR UPDATE] Marca: da
+2025-10-23 16:49:45,328 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:49:45,328 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:49:45,341 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:49:45,632 [INFO] 
+[EXTINTOR UPDATE] ID: 409
+2025-10-23 16:49:45,633 [INFO] [EXTINTOR UPDATE] Datos recibidos: {'serie': '', 'tipo': 'H2O Pres.', 'capacidad': '02 Kg.', 'marca': 'df', 'fecha_recarga': '', 'vencimiento_recarga': '', 'observaciones': ''}
+2025-10-23 16:49:45,633 [INFO] [EXTINTOR UPDATE] Serie: 
+2025-10-23 16:49:45,633 [INFO] [EXTINTOR UPDATE] Marca: df
+2025-10-23 16:49:45,633 [INFO] [EXTINTOR UPDATE] Fecha recarga: 
+2025-10-23 16:49:45,634 [INFO] [EXTINTOR UPDATE] Vencimiento: 
+2025-10-23 16:49:45,647 [INFO] [EXTINTOR UPDATE] ✅ Guardado en BD exitosamente
+
+2025-10-23 16:49:45,971 [INFO] 
+[ENVIAR-REVISION] ========== INICIO ==========
+2025-10-23 16:49:45,971 [INFO] [ENVIAR-REVISION] Orden ID: 3
+2025-10-23 16:49:45,973 [INFO] [ENVIAR-REVISION] Datos recibidos: {'fecha_recarga_seleccionada': '2025-10-01'}
+2025-10-23 16:49:45,973 [INFO] [ENVIAR-REVISION] Content-Type: application/json
+2025-10-23 16:49:45,973 [INFO] [ENVIAR-REVISION] ✅ Primera vez enviado a oficina - Marcado permanentemente
+2025-10-23 16:49:45,976 [INFO] [ENVIAR-REVISION] ✅ Fecha recarga guardada: 2025-10-01
+2025-10-23 16:49:45,988 [INFO] [ENVIAR-REVISION] ✅ Cambios guardados en BD
+2025-10-23 16:49:45,990 [INFO] [ENVIAR-REVISION] ========== FIN ==========
+
+2025-10-24 10:01:46,183 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-24 10:01:46,191 [INFO] 
+============================================================
+2025-10-24 10:01:46,191 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-24 10:01:46,192 [INFO]   Consulta RUC: API Factiliza
+2025-10-24 10:01:46,192 [INFO] ============================================================
+2025-10-24 10:01:46,192 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-24 10:01:46,192 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-24 10:01:46,192 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-24 10:01:46,193 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-24 10:01:46,193 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-24 10:01:46,193 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-24 10:01:46,193 [INFO]   - Clientes guardados correctamente
+2025-10-24 10:01:46,193 [INFO]   - Errores y warnings detallados
+2025-10-24 10:01:46,193 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-24 10:01:46,193 [INFO] ============================================================
+
+2025-10-24 10:02:24,713 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:24] code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x06à\x01\x00\x06Ü\x03\x03DÀ¦IÞ\x81Û\x00o^\x16KDË\x9fì')
+2025-10-24 10:02:24,714 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:24] code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01\x00')
+2025-10-24 10:02:24,728 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:24] code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x06')
+2025-10-24 10:02:24,731 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:24] code 400, message Bad request version ('**\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x063')
+2025-10-24 10:02:26,959 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:26] code 400, message Bad request version ('ÍøØX\x03\x0eÉ\x9e')
+2025-10-24 10:02:26,970 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:26] code 400, message Bad request version ('\x9bQª¶\x06\x95Â')
+2025-10-24 10:02:33,914 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:33] code 400, message Bad request version ('ÊG,ejqË')
+2025-10-24 10:02:33,925 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:33] code 400, message Bad request version ('ÊÊ\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06sjj\x00\x00\x00')
+2025-10-24 10:02:34,839 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:34] code 400, message Bad request version ('\x86mÆ±¼-\x90\x91\x9b;qZ¶.@ãÂv!üB~ù{?v\x96vé-3\x9dï\x1bù.|\x93&\x16L¯uÌ_»Q@{ÛÁÌØá\x83~nx\x98Ú')
+2025-10-24 10:02:34,849 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:34] code 400, message Bad request version ('{')
+2025-10-24 10:02:53,072 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:53] code 400, message Bad request version ('åak·C\x03p\x80Kñ\x92î\x81-ÿf\x83k«³î*Äv¤\x9a\\Ê®')
+2025-10-24 10:02:53,086 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:02:53] code 400, message Bad request version ('=,{')
+2025-10-24 10:03:14,380 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:14] code 400, message Bad request version ('localhost\x003\x04ï\x04í\x1a\x1a\x00\x01\x00\x11ì\x04ÀßZÄFéj\x91ê6¯g\x8cÒ5Â')
+2025-10-24 10:03:14,641 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:14] code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01\x00#\x00\x00\x00')
+2025-10-24 10:03:14,689 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:14] code 400, message Bad request version ('jj\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06e\x8a\x8a\x00\x00\x00#\x00\x00\x00-\x00\x02\x01\x01\x00\x05\x00\x05\x01\x00\x00\x00\x00\x00\x1b\x00\x03\x02\x00\x02ÿ\x01\x00\x01\x00\x00')
+2025-10-24 10:03:14,952 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:14] code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x07\x12\x01\x00\x07\x0e\x03\x03rP\x1aßÈ\x10ö\x8ak$\x80g§\x88')
+2025-10-24 10:03:16,147 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:16] code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01\x00#\x00\x00\x00\x17\x00\x00ÿ\x01\x00\x01\x00\x00+\x00\x07\x06')
+2025-10-24 10:03:16,385 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:16] code 400, message Bad request version ('¡TE\x90fU\xad±')
+2025-10-24 10:03:16,457 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:16] code 400, message Bad request version ('ÚÚ\x00\x00\x00')
+2025-10-24 10:03:16,702 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:16] code 400, message Bad request version ('5êÈ\x9aË)ÿ\x99wDB\x00#\x00\x00\x00+\x00\x07\x06')
+2025-10-24 10:03:18,219 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:18] code 400, message Bad request version ('localhost\x00\x05\x00\x05\x01\x00\x00\x00\x00\x00')
+2025-10-24 10:03:18,469 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:18] code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x06ò\x01\x00\x06î\x03\x03Ô]')
+2025-10-24 10:03:18,530 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:18] code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x06Ò\x01\x00\x06Î\x03\x03°\x068dAUã\x05')
+2025-10-24 10:03:18,779 [ERROR] 127.0.0.1 - - [24/Oct/2025 10:03:18] code 400, message Bad request version ('¦gE¾dùªO\x96À\x0e\x93`¿«ò\\\\V+ÀÕ\x1aðnø*\x01Ú3¹Ù4ºTE\x1aG\x94LÑpfïø<7Í*ÕÙE\\(')
+2025-10-24 10:03:20,094 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:03:20] code 400, message Bad request version ('ÕÇ\x8aÂè')
+2025-10-24 10:03:20,107 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:03:20] code 400, message Bad request version ('ÊÊ\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06s')
+2025-10-24 10:03:21,600 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:03:21] code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01\x003\x04ï\x04í\x9a\x9a\x00\x01\x00\x11ì\x04À\x92\x94|¦¥ÄÔW4k|\x9e3q\x94O2xI')
+2025-10-24 10:03:21,613 [ERROR] 192.168.1.53 - - [24/Oct/2025 10:03:21] code 400, message Bad request syntax ('\x16\x03\x01\x07\x00\x01\x00\x06ü\x03\x03\x9cRG¼ê´.´îYq2K')
+2025-10-24 15:54:41,858 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-24 15:54:41,879 [INFO] 
+============================================================
+2025-10-24 15:54:41,880 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-24 15:54:41,880 [INFO]   Consulta RUC: API Factiliza
+2025-10-24 15:54:41,880 [INFO] ============================================================
+2025-10-24 15:54:41,881 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-24 15:54:41,881 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-24 15:54:41,881 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-24 15:54:41,881 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-24 15:54:41,881 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-24 15:54:41,882 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-24 15:54:41,882 [INFO]   - Clientes guardados correctamente
+2025-10-24 15:54:41,882 [INFO]   - Errores y warnings detallados
+2025-10-24 15:54:41,883 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-24 15:54:41,883 [INFO] ============================================================
+
+2025-10-24 16:23:19,855 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-24 16:23:19,860 [INFO] 
+============================================================
+2025-10-24 16:23:19,860 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-24 16:23:19,860 [INFO]   Consulta RUC: API Factiliza
+2025-10-24 16:23:19,860 [INFO] ============================================================
+2025-10-24 16:23:19,861 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-24 16:23:19,861 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-24 16:23:19,861 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-24 16:23:19,861 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-24 16:23:19,861 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-24 16:23:19,861 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-24 16:23:19,861 [INFO]   - Clientes guardados correctamente
+2025-10-24 16:23:19,861 [INFO]   - Errores y warnings detallados
+2025-10-24 16:23:19,861 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-24 16:23:19,861 [INFO] ============================================================
+
+2025-10-24 17:58:34,655 [INFO] [DB] Base de datos inicializada correctamente
+2025-10-24 17:58:34,660 [INFO] 
+============================================================
+2025-10-24 17:58:34,660 [INFO]   SISTEMA DE GESTION DE EXTINTORES v2.0
+2025-10-24 17:58:34,660 [INFO]   Consulta RUC: API Factiliza
+2025-10-24 17:58:34,661 [INFO]   🔄 Sincronización en Tiempo Real: ACTIVADA
+2025-10-24 17:58:34,663 [INFO] ============================================================
+2025-10-24 17:58:34,663 [INFO] 
+[OK] Servidor iniciado correctamente
+2025-10-24 17:58:34,664 [INFO] [OK] Abre la vista previa del navegador en tu IDE
+2025-10-24 17:58:34,664 [INFO] 
+-> URL Local: http://127.0.0.1:5000
+2025-10-24 17:58:34,664 [INFO] -> Desde tu celular: http://192.168.1.89:5000
+2025-10-24 17:58:34,664 [INFO] 
+[INFO] Los logs se mostraran aqui en tiempo real:
+2025-10-24 17:58:34,665 [INFO]   - Consultas RUC (API Factiliza)
+2025-10-24 17:58:34,665 [INFO]   - Clientes guardados correctamente
+2025-10-24 17:58:34,665 [INFO]   - Cambios sincronizados entre dispositivos
+2025-10-24 17:58:34,665 [INFO]   - Errores y warnings detallados
+2025-10-24 17:58:34,665 [INFO] 
+[INFO] Para detener: Presiona CTRL+C
+2025-10-24 17:58:34,666 [INFO] ============================================================
+
+2025-10-24 18:00:51,162 [ERROR] 127.0.0.1 - - [24/Oct/2025 18:00:51] code 400, message Bad request version ('ç¬fÏvÚi8\x00®Ù\x8egê\x15')
+2025-10-24 18:00:51,169 [ERROR] 127.0.0.1 - - [24/Oct/2025 18:00:51] code 400, message Bad request version ('\x7fiV§ÀÊ\x04æ{Æo\x9b)\x06è\x8ag')
+2025-10-24 18:00:51,401 [ERROR] 127.0.0.1 - - [24/Oct/2025 18:00:51] code 400, message Bad request version ('\x02h2\x08http/1.1\x00\x17\x00\x00\x00-\x00\x02\x01\x01\x00\x1b\x00\x03\x02\x00\x02\x00')
+2025-10-24 18:00:51,495 [ERROR] 127.0.0.1 - - [24/Oct/2025 18:00:51] code 400, message Bad request version ('p\x16n')
+2025-10-24 18:00:51,496 [ERROR] 127.0.0.1 - - [24/Oct/2025 18:00:51] code 400, message Bad request version ('r·uàBw5p¸\\©j^i¹\x8b#jôê9çAÁ\x91kZÜ\x1b[YBbÇ\x95]w\x93"F\x94\x9aÅöÊ\x15H\x18Â\x87\x90Öë\x9eÎ·£ii')
+2025-10-24 18:00:51,711 [ERROR] 127.0.0.1 - - [24/Oct/2025 18:00:51] code 400, message Bad request syntax ('\x16\x03\x01\x07\x12\x01\x00\x07\x0e\x03\x03\x19a+`£Då\x817|')

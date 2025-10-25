@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Mantenimientos - Sistema de Extintores{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-tools"></i> Gestión de Mantenimientos</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMantenimiento">
+        <i class="bi bi-plus-circle"></i> Nuevo Mantenimiento
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <input type="text" id="buscar-mantenimiento" class="form-control" placeholder="Buscar por código o cliente...">
+            </div>
+            <div class="col-md-3">
+                <select id="filtro-tipo-servicio" class="form-select">
+                    <option value="">Todos los servicios</option>
+                    <option value="Recarga">Recarga</option>
+                    <option value="Inspección">Inspección</option>
+                    <option value="Mantenimiento Preventivo">Mantenimiento Preventivo</option>
+                    <option value="Prueba Hidrostática">Prueba Hidrostática</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="month" id="filtro-mes" class="form-control">
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Extintor</th>
+                        <th>Cliente</th>
+                        <th>Tipo Servicio</th>
+                        <th>Técnico</th>
+                        <th>Costo</th>
+                        <th>Próximo Servicio</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-mantenimientos"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Mantenimiento -->
+<div class="modal fade" id="modalMantenimiento" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Mantenimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formMantenimiento">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Extintor *</label>
+                            <select class="form-select" id="mant-extintor" required></select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Servicio *</label>
+                            <select class="form-select" id="mant-tipo" required>
+                                <option value="">Seleccione...</option>
+                                <option value="Recarga">Recarga</option>
+                                <option value="Inspección">Inspección</option>
+                                <option value="Mantenimiento Preventivo">Mantenimiento Preventivo</option>
+                                <option value="Prueba Hidrostática">Prueba Hidrostática</option>
+                                <option value="Reparación">Reparación</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Técnico</label>
+                            <input type="text" class="form-control" id="mant-tecnico">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Costo</label>
+                            <input type="number" class="form-control" id="mant-costo" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Próximo Servicio</label>
+                        <input type="date" class="form-control" id="mant-proximo">
+                        <small class="text-muted">Se actualizará automáticamente la fecha en el extintor</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="mant-observaciones" rows="4" placeholder="Detalles del servicio realizado..."></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="mant-completado" checked>
+                        <label class="form-check-label" for="mant-completado">
+                            Servicio completado
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarMantenimiento()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let mantenimientos = [];
+    let extintores = [];
+    
+    function cargarMantenimientos() {
+        fetch('/api/mantenimientos')
+            .then(response => response.json())
+            .then(data => {
+                mantenimientos = data;
+                mostrarMantenimientos(data);
+            });
+    }
+    
+    function cargarExtintores() {
+        fetch('/api/extintores')
+            .then(response => response.json())
+            .then(data => {
+                extintores = data;
+                const select = document.getElementById('mant-extintor');
+                select.innerHTML = '<option value="">Seleccione un extintor...</option>';
+                data.forEach(extintor => {
+                    select.innerHTML += `<option value="${extintor.id}">${extintor.codigo} - ${extintor.cliente_nombre}</option>`;
+                });
+            });
+    }
+    
+    function mostrarMantenimientos(data) {
+        const tabla = document.getElementById('tabla-mantenimientos');
+        tabla.innerHTML = '';
+        
+        if (data.length === 0) {
+            tabla.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No hay mantenimientos registrados</td></tr>';
+            return;
+        }
+        
+        data.forEach(mant => {
+            const fila = `
+                <tr>
+                    <td>${mant.fecha_servicio}</td>
+                    <td><strong>${mant.extintor_serie}</strong></td>
+                    <td>${mant.cliente_nombre}</td>
+                    <td><span class="badge bg-info">${mant.tipo_servicio}</span></td>
+                    <td>${mant.tecnico || '-'}</td>
+                    <td>$${parseFloat(mant.costo).toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                    <td>${mant.proximo_servicio || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-success" onclick="descargarCertificado(${mant.id})">
+                            <i class="bi bi-file-pdf"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tabla.innerHTML += fila;
+        });
+    }
+    
+    function guardarMantenimiento() {
+        const datos = {
+            extintor_id: document.getElementById('mant-extintor').value,
+            tipo_servicio: document.getElementById('mant-tipo').value,
+            tecnico: document.getElementById('mant-tecnico').value,
+            costo: document.getElementById('mant-costo').value || 0,
+            proximo_servicio: document.getElementById('mant-proximo').value,
+            observaciones: document.getElementById('mant-observaciones').value,
+            completado: document.getElementById('mant-completado').checked
+        };
+        
+        if (!datos.extintor_id || !datos.tipo_servicio) {
+            alert('Complete los campos obligatorios');
+            return;
+        }
+        
+        fetch('/api/mantenimientos', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalMantenimiento')).hide();
+                cargarMantenimientos();
+                limpiarFormulario();
+                alert('Mantenimiento registrado correctamente');
+            }
+        });
+    }
+    
+    function descargarCertificado(id) {
+        window.open(`/api/certificado/${id}`, '_blank');
+    }
+    
+    function limpiarFormulario() {
+        document.getElementById('formMantenimiento').reset();
+        document.getElementById('mant-completado').checked = true;
+    }
+    
+    // Filtros
+    function aplicarFiltros() {
+        const busqueda = document.getElementById('buscar-mantenimiento').value.toLowerCase();
+        const tipoServicio = document.getElementById('filtro-tipo-servicio').value;
+        const mes = document.getElementById('filtro-mes').value;
+        
+        const filtrados = mantenimientos.filter(m => {
+            const matchBusqueda = m.extintor_serie.toLowerCase().includes(busqueda) || 
+                                  m.cliente_nombre.toLowerCase().includes(busqueda);
+            const matchTipo = !tipoServicio || m.tipo_servicio === tipoServicio;
+            const matchMes = !mes || m.fecha_servicio.startsWith(mes);
+            
+            return matchBusqueda && matchTipo && matchMes;
+        });
+        
+        mostrarMantenimientos(filtrados);
+    }
+    
+    document.getElementById('buscar-mantenimiento').addEventListener('input', aplicarFiltros);
+    document.getElementById('filtro-tipo-servicio').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtro-mes').addEventListener('change', aplicarFiltros);
+    
+    document.getElementById('modalMantenimiento').addEventListener('hidden.bs.modal', limpiarFormulario);
+    
+    // Sugerir fecha próximo servicio según tipo
+    document.getElementById('mant-tipo').addEventListener('change', function() {
+        const tipo = this.value;
+        const fechaProximo = document.getElementById('mant-proximo');
+        const hoy = new Date();
+        
+        let mesesAdelante = 12; // Por defecto 1 año
+        
+        if (tipo === 'Recarga') mesesAdelante = 12;
+        else if (tipo === 'Inspección') mesesAdelante = 6;
+        else if (tipo === 'Mantenimiento Preventivo') mesesAdelante = 12;
+        else if (tipo === 'Prueba Hidrostática') mesesAdelante = 60; // 5 años
+        
+        const fechaSugerida = new Date(hoy.setMonth(hoy.getMonth() + mesesAdelante));
+        fechaProximo.value = fechaSugerida.toISOString().split('T')[0];
+    });
+    
+    cargarExtintores();
+    cargarMantenimientos();
+</script>
+{% endblock %}

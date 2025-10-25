@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Extintores - Sistema de Extintores{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-fire-extinguisher"></i> Gestión de Extintores</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalExtintor">
+        <i class="bi bi-plus-circle"></i> Nuevo Extintor
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <input type="text" id="buscar-extintor" class="form-control" placeholder="Buscar por código o cliente...">
+            </div>
+            <div class="col-md-3">
+                <select id="filtro-estado" class="form-select">
+                    <option value="">Todos los estados</option>
+                    <option value="Operativo">Operativo</option>
+                    <option value="Mantenimiento">En Mantenimiento</option>
+                    <option value="Baja">Dado de Baja</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select id="filtro-tipo" class="form-select">
+                    <option value="">Todos los tipos</option>
+                    <option value="PQS">PQS</option>
+                    <option value="CO2">CO2</option>
+                    <option value="Agua">Agua</option>
+                    <option value="Espuma">Espuma</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Cliente</th>
+                        <th>Tipo</th>
+                        <th>Capacidad</th>
+                        <th>Ubicación</th>
+                        <th>Última Recarga</th>
+                        <th>Próximo Mant.</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-extintores"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Extintor -->
+<div class="modal fade" id="modalExtintor" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalExtintorTitulo">Nuevo Extintor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formExtintor">
+                    <input type="hidden" id="extintor-id">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Serie *</label>
+                            <input type="text" class="form-control" id="extintor-serie" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Cliente *</label>
+                            <select class="form-select" id="extintor-cliente" required></select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo *</label>
+                            <select class="form-select" id="extintor-tipo" required>
+                                <option value="">Seleccione...</option>
+                                <option value="PQS">PQS (Polvo Químico Seco)</option>
+                                <option value="CO2">CO2 (Dióxido de Carbono)</option>
+                                <option value="Agua">Agua</option>
+                                <option value="Espuma">Espuma</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Capacidad *</label>
+                            <select class="form-select" id="extintor-capacidad" required>
+                                <option value="">Seleccione...</option>
+                                <option value="1 kg">1 kg</option>
+                                <option value="2 kg">2 kg</option>
+                                <option value="4.5 kg">4.5 kg</option>
+                                <option value="6 kg">6 kg</option>
+                                <option value="9 kg">9 kg</option>
+                                <option value="12 kg">12 kg</option>
+                                <option value="20 kg">20 kg</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Marca</label>
+                        <input type="text" class="form-control" id="extintor-marca" placeholder="Ej: Kidde, Ansul">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Última Recarga</label>
+                            <input type="date" class="form-control" id="extintor-recarga">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Próximo Mantenimiento</label>
+                            <input type="date" class="form-control" id="extintor-proximo">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Estado</label>
+                        <select class="form-select" id="extintor-estado">
+                            <option value="Operativo">Operativo</option>
+                            <option value="Mantenimiento">En Mantenimiento</option>
+                            <option value="Baja">Dado de Baja</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="extintor-observaciones" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarExtintor()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let extintores = [];
+    let clientes = [];
+    
+    function cargarExtintores() {
+        fetch('/api/extintores')
+            .then(response => response.json())
+            .then(data => {
+                extintores = data;
+                mostrarExtintores(data);
+            });
+    }
+    
+    function cargarClientes() {
+        fetch('/api/clientes')
+            .then(response => response.json())
+            .then(data => {
+                clientes = data;
+                const select = document.getElementById('extintor-cliente');
+                select.innerHTML = '<option value="">Seleccione un cliente...</option>';
+                data.forEach(cliente => {
+                    select.innerHTML += `<option value="${cliente.id}">${cliente.nombre}</option>`;
+                });
+            });
+    }
+    
+    function mostrarExtintores(data) {
+        const tabla = document.getElementById('tabla-extintores');
+        tabla.innerHTML = '';
+        
+        if (data.length === 0) {
+            tabla.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No hay extintores registrados</td></tr>';
+            return;
+        }
+        
+        data.forEach(extintor => {
+            let estadoBadge = 'bg-success';
+            let alertaBadge = '';
+            
+            if (extintor.estado === 'Mantenimiento') estadoBadge = 'bg-warning';
+            if (extintor.estado === 'Baja') estadoBadge = 'bg-secondary';
+            
+            if (extintor.dias_para_mantenimiento !== null) {
+                if (extintor.dias_para_mantenimiento < 0) {
+                    alertaBadge = '<span class="badge bg-danger ms-1">Vencido</span>';
+                } else if (extintor.dias_para_mantenimiento <= 7) {
+                    alertaBadge = '<span class="badge bg-warning ms-1">Urgente</span>';
+                }
+            }
+            
+            const fila = `
+                <tr>
+                    <td><strong>${extintor.serie}</strong></td>
+                    <td>${extintor.cliente_nombre}</td>
+                    <td>${extintor.tipo}</td>
+                    <td>${extintor.capacidad}</td>
+                    <td>${extintor.marca || '-'}</td>
+                    <td>${extintor.fecha_ultima_recarga || '-'}</td>
+                    <td>${extintor.fecha_proximo_mantenimiento || '-'} ${alertaBadge}</td>
+                    <td><span class="badge ${estadoBadge}">${extintor.estado}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editarExtintor(${extintor.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarExtintor(${extintor.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tabla.innerHTML += fila;
+        });
+    }
+    
+    function guardarExtintor() {
+        const id = document.getElementById('extintor-id').value;
+        const datos = {
+            serie: document.getElementById('extintor-serie').value,
+            cliente_id: document.getElementById('extintor-cliente').value,
+            tipo: document.getElementById('extintor-tipo').value,
+            capacidad: document.getElementById('extintor-capacidad').value,
+            marca: document.getElementById('extintor-marca').value,
+            fecha_ultima_recarga: document.getElementById('extintor-recarga').value,
+            fecha_proximo_mantenimiento: document.getElementById('extintor-proximo').value,
+            estado: document.getElementById('extintor-estado').value,
+            observaciones: document.getElementById('extintor-observaciones').value
+        };
+        
+        if (!datos.serie || !datos.cliente_id || !datos.tipo || !datos.capacidad) {
+            alert('Complete los campos obligatorios');
+            return;
+        }
+        
+        const url = id ? `/api/extintores/${id}` : '/api/extintores';
+        const method = id ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalExtintor')).hide();
+                cargarExtintores();
+                limpiarFormulario();
+            }
+        });
+    }
+    
+    function editarExtintor(id) {
+        fetch(`/api/extintores/${id}`)
+            .then(response => response.json())
+            .then(extintor => {
+                document.getElementById('extintor-id').value = extintor.id;
+                document.getElementById('extintor-serie').value = extintor.serie;
+                document.getElementById('extintor-cliente').value = extintor.cliente_id;
+                document.getElementById('extintor-tipo').value = extintor.tipo;
+                document.getElementById('extintor-capacidad').value = extintor.capacidad;
+                document.getElementById('extintor-marca').value = extintor.marca || '';
+                document.getElementById('extintor-recarga').value = extintor.fecha_ultima_recarga || '';
+                document.getElementById('extintor-proximo').value = extintor.fecha_proximo_mantenimiento || '';
+                document.getElementById('extintor-estado').value = extintor.estado;
+                document.getElementById('extintor-observaciones').value = extintor.observaciones || '';
+                
+                document.getElementById('modalExtintorTitulo').textContent = 'Editar Extintor';
+                new bootstrap.Modal(document.getElementById('modalExtintor')).show();
+            });
+    }
+    
+    function eliminarExtintor(id) {
+        if (confirm('¿Está seguro de eliminar este extintor?')) {
+            fetch(`/api/extintores/${id}`, {method: 'DELETE'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        cargarExtintores();
+                    }
+                });
+        }
+    }
+    
+    function limpiarFormulario() {
+        document.getElementById('formExtintor').reset();
+        document.getElementById('extintor-id').value = '';
+        document.getElementById('modalExtintorTitulo').textContent = 'Nuevo Extintor';
+    }
+    
+    // Filtros
+    function aplicarFiltros() {
+        const busqueda = document.getElementById('buscar-extintor').value.toLowerCase();
+        const estado = document.getElementById('filtro-estado').value;
+        const tipo = document.getElementById('filtro-tipo').value;
+        
+        const filtrados = extintores.filter(e => {
+            const matchBusqueda = e.serie.toLowerCase().includes(busqueda) || 
+                                  e.cliente_nombre.toLowerCase().includes(busqueda);
+            const matchEstado = !estado || e.estado === estado;
+            const matchTipo = !tipo || e.tipo === tipo;
+            
+            return matchBusqueda && matchEstado && matchTipo;
+        });
+        
+        mostrarExtintores(filtrados);
+    }
+    
+    document.getElementById('buscar-extintor').addEventListener('input', aplicarFiltros);
+    document.getElementById('filtro-estado').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtro-tipo').addEventListener('change', aplicarFiltros);
+    
+    document.getElementById('modalExtintor').addEventListener('hidden.bs.modal', limpiarFormulario);
+    
+    cargarClientes();
+    cargarExtintores();
+</script>
+{% endblock %}

@@ -1,0 +1,3128 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Orden - Sistema de Extintores{% endblock %}
+
+{% block extra_head %}
+<!-- Socket.IO para sincronización en tiempo real -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+{% endblock %}
+
+{% block extra_css %}
+<!-- Version 3.0 - Detección Robusta de Envío a Oficina -->
+<style>
+    @keyframes pulse {
+        0%, 100% { 
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        50% { 
+            transform: scale(1.15);
+            box-shadow: 0 6px 16px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .etapa-circulo {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .etapa-circulo:hover {
+        transform: scale(1.05);
+    }
+    
+    /* Estilos para tabla de extintores con bordes verticales */
+    #tablaExtintores {
+        border-collapse: separate !important;
+        border-spacing: 0;
+    }
+    
+    #tablaExtintores thead th {
+        border: 1px solid #dee2e6 !important;
+        border-bottom: 2px solid #198754 !important;
+        background-color: #f8f9fa !important;
+        font-weight: 600;
+        padding: 10px 8px !important;
+        text-align: center;
+    }
+    
+    #tablaExtintores tbody td {
+        border: 1px solid #dee2e6 !important;
+        padding: 8px !important;
+        vertical-align: middle;
+        text-align: center;
+    }
+    
+    #tablaExtintores tbody td[contenteditable="true"] {
+        background-color: #fff;
+        cursor: text;
+    }
+    
+    #tablaExtintores tbody td[contenteditable="true"]:hover {
+        background-color: #f0f8ff;
+        outline: 2px solid #0d6efd;
+        outline-offset: -2px;
+    }
+    
+    #tablaExtintores tbody td[contenteditable="true"]:focus {
+        background-color: #fffacd;
+        outline: 2px solid #198754;
+        outline-offset: -2px;
+    }
+    
+    #tablaExtintores tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Animación para el indicador de guardado */
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    #indicadorGuardado {
+        animation: slideInRight 0.3s ease-out;
+        font-size: 0.9rem;
+        padding: 6px 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Cambiar color del header de la card de Registro */
+    #cardRegistro .card-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+    }
+    
+    /* Animación para resaltar foto nueva */
+    @keyframes resaltarFoto {
+        0%, 100% {
+            border-color: #28a745;
+            box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+        }
+        50% {
+            border-color: #20c997;
+            box-shadow: 0 0 25px rgba(32, 201, 151, 0.8);
+        }
+    }
+    
+    .foto-nueva-resaltada {
+        border: 3px solid #28a745 !important;
+        animation: resaltarFoto 1s ease-in-out infinite;
+        transition: all 0.3s ease;
+    }
+    
+    /* Estilos para diferenciar secciones de Recojo */
+    .seccion-guia-recojo {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%);
+        border-left: 4px solid #1976d2;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .seccion-guia-recojo:hover {
+        box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .seccion-guia-recojo .form-check-label h6 {
+        color: #1565c0;
+        font-weight: 600;
+    }
+    
+    .seccion-guia-recojo .form-check-input:checked {
+        background-color: #1976d2;
+        border-color: #1976d2;
+    }
+    
+    .seccion-evidencia-fotografica {
+        background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%);
+        border-left: 4px solid #2e7d32;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(46, 125, 50, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .seccion-evidencia-fotografica:hover {
+        box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .seccion-evidencia-fotografica .form-check-label h6 {
+        color: #1b5e20;
+        font-weight: 600;
+    }
+    
+    .seccion-evidencia-fotografica .form-check-input:checked {
+        background-color: #2e7d32;
+        border-color: #2e7d32;
+    }
+    
+    /* Iconos con colores distintivos */
+    .seccion-guia-recojo .bi-file-earmark-image {
+        color: #1976d2;
+        font-size: 1.1em;
+    }
+    
+    .seccion-evidencia-fotografica .bi-camera {
+        color: #2e7d32;
+        font-size: 1.1em;
+    }
+    
+    /* Botones personalizados para cada sección */
+    .seccion-guia-recojo .btn-primary {
+        background-color: #1976d2;
+        border-color: #1976d2;
+    }
+    
+    .seccion-guia-recojo .btn-primary:hover {
+        background-color: #1565c0;
+        border-color: #1565c0;
+    }
+    
+    .seccion-guia-recojo .btn-outline-primary {
+        color: #1976d2;
+        border-color: #1976d2;
+    }
+    
+    .seccion-guia-recojo .btn-outline-primary:hover {
+        background-color: #1976d2;
+        border-color: #1976d2;
+        color: white;
+    }
+    
+    .seccion-evidencia-fotografica .btn-primary {
+        background-color: #2e7d32;
+        border-color: #2e7d32;
+    }
+    
+    .seccion-evidencia-fotografica .btn-primary:hover {
+        background-color: #1b5e20;
+        border-color: #1b5e20;
+    }
+    
+    .seccion-evidencia-fotografica .btn-outline-primary {
+        color: #2e7d32;
+        border-color: #2e7d32;
+    }
+    
+    .seccion-evidencia-fotografica .btn-outline-primary:hover {
+        background-color: #2e7d32;
+        border-color: #2e7d32;
+        color: white;
+    }
+    
+    /* Badges personalizados */
+    .seccion-guia-recojo .badge {
+        background-color: #1976d2 !important;
+        font-weight: 500;
+        padding: 4px 8px;
+    }
+    
+    .seccion-evidencia-fotografica .badge {
+        background-color: #2e7d32 !important;
+        font-weight: 500;
+        padding: 4px 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <a href="/ordenes" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h4 class="mb-0">
+                <i class="bi bi-clipboard-check"></i> <span id="numeroOrden">Cargando...</span>
+            </h4>
+            <span id="estadoBadge" class="badge bg-secondary">Cargando...</span>
+        </div>
+    </div>
+
+    <!-- Barra de Progreso de Etapas -->
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center position-relative" style="padding: 0 20px;">
+                <!-- Línea de fondo -->
+                <div style="position: absolute; top: 50%; left: 0; right: 0; height: 3px; background: #e0e0e0; z-index: 0;"></div>
+                <!-- Línea de progreso -->
+                <div id="lineaProgreso" style="position: absolute; top: 50%; left: 0; height: 3px; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); z-index: 2; width: 0%; transition: width 1s ease-in-out;"></div>
+                
+                <!-- Círculo 1: Creación -->
+                <div class="text-center" style="z-index: 3;" onclick="cambiarEtapa(0)">
+                    <div class="etapa-circulo" id="circulo-0" style="width: 50px; height: 50px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; position: relative; z-index: 3;">
+                        <i class="bi bi-file-earmark-plus"></i>
+                    </div>
+                    <small class="d-block mt-2 fw-bold">Creación</small>
+                </div>
+                
+                <!-- Círculo 2: Asignación -->
+                <div class="text-center" style="z-index: 3;" onclick="cambiarEtapa(1)">
+                    <div class="etapa-circulo" id="circulo-1" style="width: 50px; height: 50px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; position: relative; z-index: 3;">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+                    <small class="d-block mt-2 fw-bold">Asignación</small>
+                </div>
+                
+                <!-- Círculo 3: Recojo -->
+                <div class="text-center" style="z-index: 3;" onclick="cambiarEtapa(2)">
+                    <div class="etapa-circulo" id="circulo-2" style="width: 50px; height: 50px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; position: relative; z-index: 3;">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <small class="d-block mt-2 fw-bold">Recojo</small>
+                </div>
+                
+                <!-- Círculo 4: Registro de Datos -->
+                <div class="text-center" style="z-index: 3;" onclick="cambiarEtapa(3)">
+                    <div class="etapa-circulo" id="circulo-3" style="width: 50px; height: 50px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; position: relative; z-index: 3;">
+                        <i class="bi bi-table"></i>
+                    </div>
+                    <small class="d-block mt-2 fw-bold">Registro</small>
+                </div>
+                
+                <!-- Círculo 5: Revisión -->
+                <div class="text-center" style="z-index: 3;" onclick="cambiarEtapa(4)">
+                    <div class="etapa-circulo" id="circulo-4" style="width: 50px; height: 50px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; position: relative; z-index: 3;">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <small class="d-block mt-2 fw-bold">Revisión</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Creación de Orden -->
+    <div class="card mb-3" id="cardCreacion">
+        <div class="card-header bg-primary text-white">
+            <h6 class="mb-0"><i class="bi bi-file-earmark-plus"></i> Información General de la Orden</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <small class="text-muted">Cliente</small>
+                    <div><strong id="clienteNombre">-</strong></div>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted">Fecha de Recojo</small>
+                    <div><strong id="fechaRecojo">-</strong></div>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted">Fecha de Creación</small>
+                    <div><strong id="fechaCreacion">-</strong></div>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Dirección</small>
+                    <div id="direccionRecojo">-</div>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Contacto</small>
+                    <div id="contactoRecojo">-</div>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Teléfono</small>
+                    <div id="telefonoContacto">-</div>
+                </div>
+                <div class="col-12">
+                    <small class="text-muted">Observaciones</small>
+                    <div id="observacionesOrden" class="text-muted">-</div>
+                </div>
+            </div>
+            
+            <!-- Lista de Extintores a Recoger -->
+            <div class="mt-3">
+                <h6><i class="bi bi-list-check"></i> Extintores a Recoger</h6>
+                <div id="listaExtintoresRecoger"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Asignación de Trabajadores -->
+    <div class="card mb-3" id="cardAsignacion" style="display: none;">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-person-check"></i> Asignación de Trabajadores</h6>
+            <div>
+                <button class="btn btn-sm btn-light me-2" onclick="agregarTrabajador()">
+                    <i class="bi bi-person-plus-fill"></i> Agregar Trabajador
+                </button>
+                <button class="btn btn-sm btn-success" onclick="confirmarAsignacionCompleta()" id="btnConfirmarAsignacion" style="display: none;">
+                    <i class="bi bi-check-circle-fill"></i> Confirmar Asignación
+                </button>
+            </div>
+        </div>
+        <div class="card-body" id="contenidoAsignacion">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No hay trabajadores asignados. Haga clic en "Agregar Trabajador" para asignar personal a esta orden.
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Recojo de Extintores -->
+    <div class="card mb-3" id="cardRecojo" style="display: none;">
+        <div class="card-header bg-warning">
+            <h6 class="mb-0"><i class="bi bi-truck"></i> Recojo de Extintores</h6>
+        </div>
+        <div class="card-body">
+            <!-- Confirmación de Recojo -->
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="checkRecogido" onchange="marcarComoRecogido(this.checked)">
+                <label class="form-check-label" for="checkRecogido">
+                    <strong>Marcar extintores como recogidos</strong>
+                </label>
+            </div>
+            <div id="fechaRecogidoInfo" style="display: none;" class="alert alert-success">
+                <i class="bi bi-check-circle"></i> Recogido el: <strong id="fechaRecogidoReal"></strong>
+            </div>
+
+            <hr>
+
+            <!-- Sección de Foto de Guía de Recojo -->
+            <div class="seccion-guia-recojo">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="checkFotoGuia" onchange="toggleFotoGuia(this.checked)">
+                        <label class="form-check-label" for="checkFotoGuia">
+                            <h6 class="mb-0">
+                                <i class="bi bi-file-earmark-image"></i> Foto de Guía de Recojo
+                                <span class="badge bg-primary ms-2" style="font-size: 0.65em; vertical-align: middle;">Documento Oficial</span>
+                            </h6>
+                        </label>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" id="btnEliminarTodasFotosGuia" onclick="confirmarEliminarTodasFotosGuia()" style="display: none;">
+                        <i class="bi bi-trash"></i> Eliminar Todas
+                    </button>
+                </div>
+                
+                <div id="seccionFotosGuia" style="display: none;">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <button class="btn btn-primary w-100" onclick="abrirCamaraGuia()">
+                                <i class="bi bi-camera-fill me-2"></i>Tomar Foto
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="btn btn-outline-primary w-100 mb-0" for="subirFotoGuia">
+                                <i class="bi bi-upload me-2"></i>Subir Foto
+                            </label>
+                            <input type="file" id="subirFotoGuia" accept="image/*" multiple style="display: none;" onchange="subirFotosGuia(this.files)">
+                        </div>
+                    </div>
+                    
+                    <!-- Vista previa de fotos de guía -->
+                    <div id="galeriaFotosGuia" class="row g-2">
+                        <!-- Las fotos se mostrarán aquí -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Evidencia Fotográfica -->
+            <div class="seccion-evidencia-fotografica">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="checkEvidenciaFotografica" onchange="toggleEvidenciaFotografica(this.checked)">
+                        <label class="form-check-label" for="checkEvidenciaFotografica">
+                            <h6 class="mb-0">
+                                <i class="bi bi-camera"></i> Evidencia Fotográfica
+                                <span class="badge bg-success ms-2" style="font-size: 0.65em; vertical-align: middle;">Verificación Visual</span>
+                            </h6>
+                        </label>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" id="btnEliminarTodasFotos" onclick="confirmarEliminarTodasFotos()" style="display: none;">
+                        <i class="bi bi-trash"></i> Eliminar Todas
+                    </button>
+                </div>
+                
+                <div id="seccionFotos" style="display: none;">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <button class="btn btn-primary w-100" onclick="abrirCamara()">
+                                <i class="bi bi-camera-fill me-2"></i>Tomar Foto
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="btn btn-outline-primary w-100 mb-0" for="subirFotoRecojo">
+                                <i class="bi bi-upload me-2"></i>Subir Foto
+                            </label>
+                            <input type="file" id="subirFotoRecojo" accept="image/*" multiple style="display: none;" onchange="subirFotosRecojo(this.files)">
+                        </div>
+                    </div>
+                    
+                    <!-- Vista previa de fotos -->
+                    <div id="galeriaFotosRecojo" class="row g-2">
+                        <!-- Las fotos se mostrarán aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Cámara (Evidencia Fotográfica) -->
+    <div class="modal fade" id="modalCamara" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-camera-fill me-2"></i>Tomar Foto - Evidencia
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <video id="videoCamara" autoplay playsinline style="width: 100%; max-height: 400px; background: #000;"></video>
+                    <canvas id="canvasFoto" style="display: none;"></canvas>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="capturarFoto()">
+                        <i class="bi bi-camera"></i> Capturar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Cámara (Foto de Guía) -->
+    <div class="modal fade" id="modalCamaraGuia" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-camera-fill me-2"></i>Tomar Foto - Guía de Recojo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <video id="videoCamaraGuia" autoplay playsinline style="width: 100%; max-height: 400px; background: #000;"></video>
+                    <canvas id="canvasFotoGuia" style="display: none;"></canvas>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="capturarFotoGuia()">
+                        <i class="bi bi-camera"></i> Capturar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Registro de Datos -->
+    <div class="card mb-3" id="cardRegistro" style="display: none;">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-building"></i> <span id="nombreClienteRegistro">-</span>
+            </h6>
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm" id="fechaRecargaGlobal" style="width: 160px;" onchange="actualizarFechasTabla(); emitirCambioFechaRecarga(); guardarFechaRecargaEnBD()">
+                    <!-- Se llenará dinámicamente con JavaScript -->
+                </select>
+                <button class="btn btn-sm btn-light" id="btnEnviarOficina" onclick="enviarARevision()" style="display: none;">
+                    <i class="bi bi-send-fill"></i> Enviar a Oficina
+                </button>
+                <!-- Contenedor de tamaño fijo para evitar movimiento -->
+                <span style="display: inline-block; min-width: 45px; text-align: center;">
+                    <span id="indicadorAutoGuardado" class="badge" style="display: none;">
+                        <i class="bi bi-arrow-repeat spin" id="iconoGuardando" style="display: none;"></i>
+                        <i class="bi bi-check-circle-fill" id="iconoGuardado" style="display: none;"></i>
+                        <i class="bi bi-x-circle-fill text-white" id="iconoError" style="display: none;"></i>
+                    </span>
+                    <span id="indicadorGuardado" class="badge bg-success" style="display: none; cursor: default;" title="Datos guardados">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </span>
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0" id="tablaExtintores">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th>SERIE</th>
+                            <th>TIPO</th>
+                            <th>CAP.</th>
+                            <th>MARCA</th>
+                            <th>FECHA REC.</th>
+                            <th>VENC. REC.</th>
+                            <th>OBS.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-extintores-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Revisión y Finalización -->
+    <div class="card mb-3" id="cardRevision" style="display: none;">
+        <div class="card-header bg-danger text-white">
+            <h6 class="mb-0"><i class="bi bi-check-circle"></i> Revisión y Finalización</h6>
+        </div>
+        <div class="card-body text-center py-3" id="contenidoRevision">
+            <!-- Contenido dinámico: se actualiza según revision_finalizada -->
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal de Notificación -->
+<div class="modal fade" id="modalNotificacion" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="modalNotificacionHeader">
+                <h5 class="modal-title" id="modalNotificacionTitulo">
+                    <i class="bi bi-info-circle-fill me-2"></i>Notificación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalNotificacionMensaje">
+                Mensaje de notificación
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-question-circle-fill me-2"></i>Confirmación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalConfirmacionMensaje">
+                ¿Está seguro de realizar esta acción?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarAccion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spin {
+    animation: spin 1s linear infinite;
+}
+</style>
+<script>
+// VERSION 4.0 - Auto-guardado en BD con feedback visual
+const ordenId = {{ orden_id }};
+let orden = null;
+let trabajadoresTemporales = []; // Memoria temporal para trabajadores NO confirmados
+let primeraVezCargandoOrden = true; // Flag para inicializar checkboxes solo la primera vez
+
+$(document).ready(function() {
+    // Inicializar sincronización en tiempo real
+    inicializarSocketIO();
+    
+    // IMPORTANTE: Generar fechas PRIMERO, antes de cargar la orden
+    generarFechasRecarga();
+    // Luego cargar la orden (que establecerá la fecha correcta)
+    cargarOrden();
+    // Cargar fotos desde el servidor
+    cargarFotosDesdeServidor();
+    cargarFotosGuiaDesdeServidor();
+});
+
+// Función para actualizar fechas en la tabla
+function actualizarFechasTabla() {
+    const fechaRecarga = $('#fechaRecargaGlobal').val();
+    if (!fechaRecarga) return;
+    
+    // Calcular fecha de vencimiento (1 año después)
+    const fechaVenc = new Date(fechaRecarga + 'T12:00:00');
+    fechaVenc.setFullYear(fechaVenc.getFullYear() + 1);
+    
+    // Formatear para mostrar
+    const formatearFecha = (fechaISO) => {
+        const fecha = new Date(fechaISO + 'T12:00:00');
+        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        return `${meses[fecha.getMonth()]}-${fecha.getFullYear()}`;
+    };
+    
+    const fechaRecargaTexto = formatearFecha(fechaRecarga);
+    const fechaVencimientoTexto = formatearFecha(fechaVenc.toISOString().split('T')[0]);
+    
+    // Actualizar directamente las celdas de la tabla
+    const tbody = $('#tabla-extintores-body');
+    tbody.find('tr').each(function() {
+        const celdas = $(this).find('td');
+        // Columna 5 = FECHA REC. (índice 5)
+        // Columna 6 = VENC. REC. (índice 6)
+        $(celdas[5]).text(fechaRecargaTexto);
+        $(celdas[6]).text(fechaVencimientoTexto);
+    });
+    
+    // También actualizar en memoria Y GUARDAR EN BD
+    if (orden && orden.extintores) {
+        orden.extintores.forEach(ext => {
+            ext.fecha_recarga = fechaRecargaTexto;
+            ext.vencimiento_recarga = fechaVencimientoTexto;
+            
+            // AUTO-GUARDAR cada extintor en BD
+            $.ajax({
+                url: `/api/ordenes/${ordenId}/extintores/${ext.id}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    fecha_recarga: fechaRecargaTexto,
+                    vencimiento_recarga: fechaVencimientoTexto
+                }),
+                success: function() {
+                    console.log(`✅ Fechas guardadas en BD para extintor ${ext.id}`);
+                },
+                error: function(xhr) {
+                    console.error(`❌ Error al guardar fechas para extintor ${ext.id}:`, xhr.responseText);
+                }
+            });
+        });
+        console.log(`📅 Fechas actualizadas: ${fechaRecargaTexto} → ${fechaVencimientoTexto}`);
+    }
+}
+
+// Generar lista de meses desde Enero 2025 hasta el mes actual
+function generarFechasRecarga() {
+    console.log('🔧 Generando opciones de fechas...');
+    const select = $('#fechaRecargaGlobal');
+    
+    // Limpiar opciones existentes
+    select.empty();
+    
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    
+    const fechaActual = new Date();
+    const mesActual = fechaActual.getMonth(); // 0-11
+    const anioActual = fechaActual.getFullYear();
+    
+    // Generar desde Enero 2025 hasta el mes actual
+    const anioInicio = 2025;
+    
+    for (let anio = anioInicio; anio <= anioActual; anio++) {
+        const mesInicio = (anio === anioInicio) ? 0 : 0; // Siempre desde Enero
+        const mesFin = (anio === anioActual) ? mesActual : 11;
+        
+        for (let mes = mesInicio; mes <= mesFin; mes++) {
+            const valor = `${anio}-${String(mes + 1).padStart(2, '0')}-01`;
+            const texto = `${meses[mes]}-${anio}`;
+            select.append(`<option value="${valor}">${texto}</option>`);
+        }
+    }
+    
+    console.log(`✅ ${select.find('option').length} opciones generadas`);
+    console.log('⏳ Esperando que cargarOrden() establezca la fecha correcta...');
+    
+    // NO seleccionar automáticamente - se seleccionará desde cargarOrden() con la fecha guardada en BD
+    // Si no hay fecha guardada, se usará el mes actual como fallback en cargarOrden()
+}
+
+// Funciones auxiliares para modales
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    const modal = new bootstrap.Modal(document.getElementById('modalNotificacion'));
+    const header = document.getElementById('modalNotificacionHeader');
+    const titulo = document.getElementById('modalNotificacionTitulo');
+    const mensajeEl = document.getElementById('modalNotificacionMensaje');
+    
+    // Configurar colores según tipo
+    if (tipo === 'success') {
+        header.className = 'modal-header bg-success text-white';
+        titulo.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Éxito';
+    } else if (tipo === 'error') {
+        header.className = 'modal-header bg-danger text-white';
+        titulo.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Error';
+    } else if (tipo === 'warning') {
+        header.className = 'modal-header bg-warning';
+        titulo.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Advertencia';
+    } else {
+        header.className = 'modal-header bg-info text-white';
+        titulo.innerHTML = '<i class="bi bi-info-circle-fill me-2"></i>Información';
+    }
+    
+    mensajeEl.textContent = mensaje;
+    modal.show();
+}
+
+function mostrarConfirmacion(mensaje, callback, textoBoton = 'Confirmar') {
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+    document.getElementById('modalConfirmacionMensaje').innerHTML = mensaje;
+    
+    // Remover listeners anteriores
+    const btnConfirmar = document.getElementById('btnConfirmarAccion');
+    const nuevoBtn = btnConfirmar.cloneNode(true);
+    btnConfirmar.parentNode.replaceChild(nuevoBtn, btnConfirmar);
+    
+    // Cambiar el texto del botón
+    nuevoBtn.textContent = textoBoton;
+    
+    // Agregar nuevo listener
+    nuevoBtn.addEventListener('click', function() {
+        modal.hide();
+        callback();
+    });
+    
+    modal.show();
+}
+
+function cargarOrden(actualizarCheckboxes = false) {
+    return $.getJSON(`/api/ordenes/${ordenId}`, function(data) {
+        orden = data;  // ← CRÍTICO: Guardar datos en variable global
+        console.log('📥 Orden cargada:', orden);
+        console.log('📅 fecha_recarga_seleccionada en BD:', data.fecha_recarga_seleccionada);
+        
+        const select = $('#fechaRecargaGlobal');
+        console.log('🔍 Opciones disponibles en select:', select.find('option').length);
+        console.log('🔍 Valor actual del select ANTES de cambiar:', select.val());
+        
+        // Restaurar la fecha de recarga seleccionada si existe, sino usar mes actual
+        if (data.fecha_recarga_seleccionada) {
+            select.val(data.fecha_recarga_seleccionada);
+            console.log('✅ Intentando establecer fecha desde BD:', data.fecha_recarga_seleccionada);
+            console.log('🔍 Valor del select DESPUÉS de cambiar:', select.val());
+            console.log('🔍 Texto mostrado:', select.find('option:selected').text());
+        } else {
+            // Usar mes actual como fallback
+            const fechaActual = new Date();
+            const mesActual = fechaActual.getMonth();
+            const anioActual = fechaActual.getFullYear();
+            const mesActualValor = `${anioActual}-${String(mesActual + 1).padStart(2, '0')}-01`;
+            select.val(mesActualValor);
+            console.log('⚠️ NO hay fecha en BD, usando mes actual:', mesActualValor);
+            console.log('🔍 Valor del select:', select.val());
+        }
+        
+        console.log('📊 Datos recibidos del servidor:', data);
+        console.log('🔥 Extintores:', data.extintores);
+        console.log('📝 Cantidad de extintores:', data.extintores ? data.extintores.length : 0);
+        
+        mostrarOrden(data);
+        mostrarExtintores(data.extintores);
+        actualizarSistemaEtapas(data);
+    }).fail(function() {
+        mostrarNotificacion('Error al cargar la orden', 'error');
+        setTimeout(() => window.location.href = '/ordenes', 2000);
+    });
+}
+
+function mostrarOrden(data) {
+    $('#numeroOrden').text(data.numero_orden);
+    $('#clienteNombre').text(data.cliente_nombre);
+    $('#nombreClienteRegistro').text(data.cliente_nombre);
+    $('#fechaRecojo').text(formatearFecha(data.fecha_recojo));
+    $('#direccionRecojo').text(data.direccion_recojo || 'No especificada');
+    $('#contactoRecojo').text(data.contacto_recojo || 'No especificado');
+    $('#telefonoContacto').text(data.telefono_contacto || 'No especificado');
+    $('#fechaCreacion').text(data.fecha_creacion);
+    $('#observacionesOrden').text(data.observaciones || 'Sin observaciones');
+    
+    // Estado
+    let estadoClass = 'bg-secondary';
+    if (data.estado === 'Pendiente') estadoClass = 'bg-warning';
+    else if (data.estado === 'En Proceso') estadoClass = 'bg-info';
+    else if (data.estado === 'Completada') estadoClass = 'bg-success';
+    
+    $('#estadoBadge').removeClass().addClass('badge ' + estadoClass).text(data.estado);
+    
+    // Mostrar lista de extintores a recoger
+    mostrarListaExtintoresRecoger(data);
+    
+    // Verificar si ya está marcado como recogido
+    const recogido = data.recogido || false;
+    $('#checkRecogido').prop('checked', recogido);
+    
+    if (recogido) {
+        $('#fechaRecogidoInfo').show();
+        $('#fechaRecogidoReal').text(data.fecha_recogido_real ? formatearFecha(data.fecha_recogido_real) : 'Hoy');
+    }
+    
+    // Inicializar checkboxes en la primera carga O cuando se solicite explícitamente (sincronización remota)
+    if (primeraVezCargandoOrden || actualizarCheckboxes) {
+        const tieneEvidencia = data.tiene_evidencia_fotografica || false;
+        $('#checkEvidenciaFotografica').prop('checked', tieneEvidencia);
+        
+        const tieneFotoGuia = data.tiene_foto_guia || false;
+        $('#checkFotoGuia').prop('checked', tieneFotoGuia);
+        
+        if (primeraVezCargandoOrden) {
+            primeraVezCargandoOrden = false; // Ya no es la primera vez
+            console.log('✅ Checkboxes inicializados desde BD (primera carga)');
+        } else {
+            console.log('🔄 Checkboxes actualizados desde BD (sincronización remota)');
+        }
+    }
+    
+    // Mostrar/ocultar sección de fotos según el estado del checkbox (NO modificar el checkbox)
+    if ($('#checkEvidenciaFotografica').is(':checked')) {
+        $('#seccionFotos').css('display', 'block');
+    } else {
+        $('#seccionFotos').css('display', 'none');
+    }
+    
+    console.log('📸 tiene_evidencia_fotografica en BD:', data.tiene_evidencia_fotografica);
+    console.log('📸 Checkbox evidencia marcado:', $('#checkEvidenciaFotografica').is(':checked'));
+    console.log('📸 Sección fotos display:', $('#seccionFotos').css('display'));
+    
+    // Mostrar/ocultar sección de fotos de guía según el estado del checkbox (NO modificar el checkbox)
+    if ($('#checkFotoGuia').is(':checked')) {
+        $('#seccionFotosGuia').css('display', 'block');
+    } else {
+        $('#seccionFotosGuia').css('display', 'none');
+    }
+    
+    console.log('📸 tiene_foto_guia en BD:', data.tiene_foto_guia);
+    console.log('📸 Checkbox guía marcado:', $('#checkFotoGuia').is(':checked'));
+    console.log('📸 Sección guía display:', $('#seccionFotosGuia').css('display'));
+    
+    // Mostrar trabajadores SOLO desde la BD (ignorar memoria temporal al recargar)
+    let trabajadoresAMostrar = [];
+    
+    if (data.trabajador_asignado && data.trabajador_asignado.trim() !== '') {
+        trabajadoresAMostrar = data.trabajador_asignado.split(', ');
+    }
+    
+    if (trabajadoresAMostrar.length > 0) {
+        let listaTrabajadores = '<div class="list-group">';
+        trabajadoresAMostrar.forEach((t, index) => {
+            const nombreEscapado = t.replace(/'/g, "\\'");
+            listaTrabajadores += `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-person-fill text-primary me-2"></i>
+                        <strong>${t}</strong>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick='eliminarTrabajadorTemporal("${nombreEscapado}")'>
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                </div>
+            `;
+        });
+        listaTrabajadores += '</div>';
+        
+        $('#contenidoAsignacion').html(listaTrabajadores);
+        
+        // Mostrar botón de confirmar SOLO si hay trabajadores pero NO están confirmados
+        // (etapa_actual === 'CREADA' significa que no se ha confirmado)
+        if (data.etapa_actual === 'CREADA') {
+            $('#btnConfirmarAsignacion').fadeIn(300);
+        } else {
+            $('#btnConfirmarAsignacion').fadeOut(200);
+        }
+    } else {
+        $('#contenidoAsignacion').html(`
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No hay trabajadores asignados. Haga clic en "Agregar Trabajador" para asignar personal a esta orden.
+            </div>
+        `);
+        // Ocultar botón de confirmar cuando no hay trabajadores
+        $('#btnConfirmarAsignacion').fadeOut(200);
+    }
+    
+    // Actualizar contenido de Revisión según revision_finalizada
+    actualizarContenidoRevision(data);
+}
+
+function actualizarContenidoRevision(data) {
+    const revisionFinalizada = data.revision_finalizada || false;
+    
+    if (revisionFinalizada) {
+        // Mostrar mensaje de orden completada
+        $('#contenidoRevision').html(`
+            <i class="bi bi-check-circle-fill" style="font-size: 2.5em; color: #198754;"></i>
+            <h5 class="mt-2 mb-2 text-success">Orden Completada</h5>
+            <p class="text-muted mb-0">Esta orden ha sido revisada y finalizada exitosamente</p>
+            <small class="text-muted">Fecha: ${data.fecha_revision_oficina ? new Date(data.fecha_revision_oficina).toLocaleString('es-ES') : 'N/A'}</small>
+        `);
+    } else {
+        // Mostrar botón de finalizar orden
+        $('#contenidoRevision').html(`
+            <i class="bi bi-hourglass-split" style="font-size: 2.5em; color: #ffc107;"></i>
+            <h5 class="mt-2 mb-2">En Revisión</h5>
+            <p class="text-muted mb-3">Esta orden está siendo revisada por el personal administrativo</p>
+            <button class="btn btn-success" onclick="finalizarOrden()">
+                <i class="bi bi-check-circle-fill"></i> Finalizar Orden
+            </button>
+        `);
+    }
+}
+
+function actualizarSistemaEtapas(data) {
+    const etapas = {
+        'CREADA': { nivel: 0 },      // Círculo 0: Creación (completado automáticamente)
+        'ASIGNADA': { nivel: 1 },    // Círculo 1: Asignación
+        'RECOGIDO': { nivel: 2 },    // Círculo 2: Recojo
+        'REVISION': { nivel: 3 },    // Círculo 3: Registro (enviado a revisión)
+        'FINALIZADO': { nivel: 4 }   // Círculo 4: Revisión (finalizado)
+    };
+    
+    const etapaActual = data.etapa_actual || 'CREADA';
+    const nivelActual = etapas[etapaActual]?.nivel || 0;
+    
+    // Determinar qué etapas están culminadas basándose en condiciones REALES
+    // Cada etapa solo puede culminarse si TODAS las anteriores están culminadas
+    
+    // NUEVA LÓGICA: Cada etapa se marca como culminada INDEPENDIENTEMENTE
+    // basándose en los datos de la BD, NO en cascada
+    
+    // 1. CREACIÓN: Siempre culminada automáticamente
+    etapasCulminadas[0] = true;
+    
+    // 2. ASIGNACIÓN: Culminada SOLO si se confirmó Y hay trabajadores asignados
+    // Debe tener trabajadores confirmados (no vacío)
+    const tieneTrabjadores = data.trabajador_asignado && data.trabajador_asignado.trim() !== '';
+    const asignacionConfirmada = data.confirmada_asignacion_alguna_vez === true && tieneTrabjadores;
+    etapasCulminadas[1] = asignacionConfirmada;
+    
+    // 3. RECOJO: Culminado si el checkbox está marcado (independiente de asignación)
+    const estaRecogido = data.recogido === true;
+    etapasCulminadas[2] = estaRecogido;
+    
+    // 4. REGISTRO: Culminado si se envió a oficina (campo enviado_a_oficina en BD)
+    const enviadoAOficina = data.enviado_a_oficina === true;
+    etapasCulminadas[3] = enviadoAOficina;
+    
+    // 5. REVISIÓN: Culminada si la revisión fue finalizada (campo revision_finalizada en BD)
+    const revisionFinalizada = data.revision_finalizada === true;
+    etapasCulminadas[4] = revisionFinalizada;
+    
+    // Calcular nivel máximo: CONSECUTIVO desde el inicio
+    // Solo se desbloquea la siguiente si TODAS las anteriores están culminadas
+    nivelMaximo = 0;
+    for (let i = 0; i <= 4; i++) {
+        if (etapasCulminadas[i]) {
+            nivelMaximo = i + 1; // Desbloquear la siguiente
+        } else {
+            break; // Detenerse en la primera NO culminada
+        }
+    }
+    // Asegurar que al menos Asignación esté disponible
+    if (nivelMaximo < 1) nivelMaximo = 1;
+    
+    // Actualizar íconos de círculos según si están culminados CONSECUTIVAMENTE
+    // Restaurar íconos originales primero
+    const iconosOriginales = [
+        '<i class="bi bi-file-earmark-plus"></i>',  // Creación
+        '<i class="bi bi-person-check"></i>',        // Asignación
+        '<i class="bi bi-truck"></i>',               // Recojo
+        '<i class="bi bi-table"></i>',               // Registro
+        '<i class="bi bi-check-circle"></i>'         // Revisión
+    ];
+    
+    // Encontrar la primera etapa NO culminada (esa es la que está EN PROCESO)
+    etapaEnProceso = 4; // Por defecto, la última
+    for (let i = 0; i <= 4; i++) {
+        if (!etapasCulminadas[i]) {
+            etapaEnProceso = i;
+            break;
+        }
+    }
+    
+    // Actualizar íconos: mostrar checks en etapas culminadas
+    for (let i = 0; i <= 4; i++) {
+        const circulo = $(`#circulo-${i}`);
+        if (etapasCulminadas[i]) {
+            circulo.html('<i class="bi bi-check-lg"></i>');
+        } else {
+            circulo.html(iconosOriginales[i]);
+        }
+    }
+    
+    // Actualizar línea de progreso con transición de 1s
+    // La línea debe llegar hasta el BORDE del círculo EN PROCESO
+    // Cada círculo está en: 0%, 25%, 50%, 75%, 100%
+    // Restamos un pequeño porcentaje para que llegue al borde, no al centro
+    const porcentajeBase = etapaEnProceso <= 4 ? (etapaEnProceso / 4) * 100 : 100;
+    // Restar ~3% para que llegue al borde del círculo (50px de diámetro)
+    const porcentaje = etapaEnProceso > 0 ? porcentajeBase - 3 : 0;
+    $('#lineaProgreso').css({'width': porcentaje + '%', 'transition': 'width 1s ease-in-out'});
+    
+    // Actualizar círculos cuando la línea llegue al borde (1s)
+    setTimeout(() => {
+        actualizarCirculos('1s');
+    }, 1000);
+    
+    // Determinar qué etapa mostrar
+    let etapaMostrar = etapaActiva;
+    
+    // Si la etapa activa está bloqueada, retroceder a la última disponible
+    if (etapaActiva > nivelMaximo) {
+        etapaMostrar = nivelMaximo;
+    }
+    
+    // Si es la primera carga, mostrar la etapa EN PROCESO (amarilla)
+    if (etapaActiva === 0) {
+        // Si hay una etapa en proceso, mostrarla
+        if (etapaEnProceso <= nivelMaximo) {
+            etapaMostrar = etapaEnProceso;
+        } else {
+            // Si todo está culminado, mostrar la última etapa
+            etapaMostrar = nivelActual;
+        }
+    }
+    
+    // Actualizar los estilos visuales de los círculos y cards
+    actualizarVisualesEtapa(etapaMostrar);
+}
+
+let etapaActiva = 0; // Etapa que se está mostrando actualmente
+
+// Función auxiliar para actualizar visuales sin cambiar de card (para recargas)
+function actualizarVisualesEtapa(etapa) {
+    etapaActiva = etapa;
+    
+    // Mostrar/ocultar cards sin animación
+    const cards = ['#cardCreacion', '#cardAsignacion', '#cardRecojo', '#cardRegistro', '#cardRevision'];
+    cards.forEach((card, index) => {
+        if (index === etapa) {
+            $(card).show();
+        } else {
+            $(card).hide();
+        }
+    });
+    
+    // Los círculos se actualizan en el setTimeout de arriba
+}
+
+// Función para actualizar estilos de círculos
+function actualizarCirculos(velocidadTransicion) {
+    // Actualizar el estilo de los círculos con 4 estados
+    // IMPORTANTE: Verificar primero si está bloqueada (i > nivelMaximo)
+    for (let i = 0; i <= 4; i++) {
+        const circulo = $(`#circulo-${i}`);
+        
+        // PRIMERO: Verificar si está bloqueada (más allá del nivel máximo)
+        if (i > nivelMaximo) {
+            // BLOQUEADA (gris, no accesible)
+            circulo.css({
+                'background': '#e0e0e0',
+                'color': '#999',
+                'border': '2px solid #ccc',
+                'transform': 'scale(0.9)',
+                'box-shadow': '0 1px 3px rgba(0,0,0,0.1)',
+                'cursor': 'not-allowed',
+                'animation': 'none',
+                'opacity': '0.6',
+                'transition': 'all ' + velocidadTransicion + ' ease-in-out'
+            });
+        } else if (etapasCulminadas[i]) {
+            // 1. CULMINADA (completada con check morado)
+            circulo.css({
+                'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'color': 'white',
+                'border': '3px solid #fff',
+                'transform': 'scale(1.05)',
+                'box-shadow': '0 3px 8px rgba(102, 126, 234, 0.4)',
+                'cursor': 'pointer',
+                'animation': 'none',
+                'opacity': '1',
+                'transition': 'all ' + velocidadTransicion + ' ease-in-out'
+            });
+        } else if (i === etapaEnProceso && i <= nivelMaximo) {
+            // 2. EN PROCESO (la siguiente a hacer - dorado pulsante)
+            circulo.css({
+                'background': 'linear-gradient(135deg, #ffd700 0%, #ffa500 100%)',
+                'color': 'white',
+                'border': '3px solid #fff',
+                'transform': 'scale(1.1)',
+                'box-shadow': '0 4px 12px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.3)',
+                'animation': 'pulse 2s infinite',
+                'cursor': 'pointer',
+                'opacity': '1',
+                'transition': 'all ' + velocidadTransicion + ' ease-in-out'
+            });
+        } else if (i === etapaActiva) {
+            // 3. SELECCIONADA (la que estamos viendo - borde azul grande)
+            circulo.css({
+                'background': 'white',
+                'color': '#667eea',
+                'transition': 'all ' + velocidadTransicion + ' ease-in-out',
+                'border': '4px solid #667eea',
+                'transform': 'scale(1.15)',
+                'box-shadow': '0 6px 16px rgba(102, 126, 234, 0.6)',
+                'cursor': 'pointer',
+                'animation': 'none',
+                'opacity': '1'
+            });
+        } else {
+            // 4. DISPONIBLE pero no culminada (gris claro)
+            circulo.css({
+                'background': '#f5f5f5',
+                'color': '#999',
+                'border': '2px solid #ddd',
+                'transform': 'scale(1)',
+                'box-shadow': '0 1px 3px rgba(0,0,0,0.1)',
+                'cursor': 'pointer',
+                'animation': 'none',
+                'opacity': '0.8',
+                'transition': 'all ' + velocidadTransicion + ' ease-in-out'
+            });
+        }
+    }
+}
+
+let nivelMaximo = 0; // Nivel máximo alcanzado (para bloquear etapas futuras)
+let etapaEnProceso = 1; // La etapa que debe completarse ahora (dorada pulsante)
+let etapasCulminadas = {
+    0: true,  // Creación siempre culminada
+    1: false, // Asignación culminada cuando hay trabajadores confirmados
+    2: false, // Recojo culminado cuando checkbox marcado
+    3: false, // Registro culminado cuando se envía a oficina
+    4: false  // Revisión culminada cuando se finaliza
+};
+
+function cambiarEtapa(etapa, esAutomatico = false) {
+    // Verificar si la etapa está desbloqueada
+    if (etapa > nivelMaximo) {
+        // No hacer nada si está bloqueada (sin mensaje)
+        return;
+    }
+    
+    // Si ya estamos en esta etapa, no hacer nada (evitar parpadeo)
+    if (etapaActiva === etapa) {
+        return;
+    }
+    
+    const etapaAnterior = etapaActiva;
+    etapaActiva = etapa;
+    
+    // Velocidad de transición: automático = 1s, manual = 0.5s
+    const velocidadFade = esAutomatico ? 500 : 250;
+    const velocidadTransicion = esAutomatico ? '1s' : '0.5s';
+    
+    // Cards
+    const cards = ['#cardCreacion', '#cardAsignacion', '#cardRecojo', '#cardRegistro', '#cardRevision'];
+    const $cardActual = $(cards[etapaAnterior]);
+    const $cardNueva = $(cards[etapa]);
+    
+    // Efecto de transición visible con fade
+    $cardActual.fadeOut(velocidadFade, function() {
+        $cardNueva.fadeIn(velocidadFade);
+    });
+    
+    // IMPORTANTE: NO actualizar línea ni círculos aquí
+    // La línea y círculos solo se actualizan en actualizarSistemaEtapas()
+    // cuando se marca como culminado
+}
+
+function mostrarListaExtintoresRecoger(data) {
+    const lista = $('#listaExtintoresRecoger');
+    
+    if (!data.extintores_detalle || data.extintores_detalle.length === 0) {
+        lista.html('<small class="text-muted">No hay información de tipos de extintores</small>');
+        return;
+    }
+    
+    let html = '<div class="row g-2">';
+    data.extintores_detalle.forEach(ext => {
+        html += `
+            <div class="col-12">
+                <div class="d-flex align-items-center p-2 border rounded bg-light">
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+                              style="width: 45px; height: 45px; font-size: 1.1rem; font-weight: bold;">
+                            ${ext.cantidad}
+                        </span>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold text-dark mb-0">${ext.tipo_nombre}</div>
+                        <small class="text-muted">${ext.capacidad_nombre}</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    lista.html(html);
+}
+
+function mostrarExtintores(extintores) {
+    const tbody = $('#tabla-extintores-body');
+    
+    if (!tbody || tbody.length === 0) {
+        alert('ERROR: No se encontró el elemento tabla-extintores-body');
+        return;
+    }
+    
+    tbody.empty();
+    
+    if (!extintores || extintores.length === 0) {
+        tbody.html('<tr><td colspan="8" class="text-center text-muted">No hay extintores registrados</td></tr>');
+        return;
+    }
+    
+    // Guardar copia de datos originales para comparar
+    datosOriginales = JSON.parse(JSON.stringify(extintores));
+    
+    // Verificar si es la primera vez (nunca enviado a oficina)
+    // LÓGICA SIMPLE Y ROBUSTA: Usar el campo enviado_a_oficina de la BD
+    const esPrimeraVez = !orden.enviado_a_oficina;
+    
+    console.log('🔍 Verificando estado de la orden:', {
+        ordenId: orden.id,
+        numeroOrden: orden.numero_orden,
+        enviadoAOficina: orden.enviado_a_oficina,
+        esPrimeraVez: esPrimeraVez,
+        fechaEnvioOficina: orden.fecha_envio_oficina
+    });
+    
+    // Obtener fecha seleccionada del combobox
+    const fechaRecargaSeleccionada = $('#fechaRecargaGlobal').val();
+    
+    // Calcular fecha de vencimiento (1 año después)
+    let fechaVencimiento = '';
+    if (fechaRecargaSeleccionada) {
+        const fecha = new Date(fechaRecargaSeleccionada + 'T12:00:00');
+        fecha.setFullYear(fecha.getFullYear() + 1);
+        fechaVencimiento = fecha.toISOString().split('T')[0];
+    }
+    
+    // Formatear fecha para mostrar (Mes-Año)
+    const formatearFechaCorta = (fechaISO) => {
+        if (!fechaISO) return '-';
+        // Agregar tiempo para evitar problemas de zona horaria
+        const fecha = new Date(fechaISO + 'T12:00:00');
+        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        return `${meses[fecha.getMonth()]}-${fecha.getFullYear()}`;
+    };
+    
+    extintores.forEach((ext, index) => {
+        // Usar las fechas del extintor si ya existen, sino usar las del combobox
+        const fechaRecargaMostrar = ext.fecha_recarga || formatearFechaCorta(fechaRecargaSeleccionada);
+        const fechaVencMostrar = ext.vencimiento_recarga || formatearFechaCorta(fechaVencimiento);
+        
+        const fila = `
+            <tr>
+                <td>${index + 1}</td>
+                <td contenteditable="true" data-field="serie" data-id="${ext.id}">${ext.serie || ''}</td>
+                <td>${ext.tipo || '-'}</td>
+                <td>${ext.capacidad || '-'}</td>
+                <td contenteditable="true" data-field="marca" data-id="${ext.id}">${ext.marca || ''}</td>
+                <td>${fechaRecargaMostrar}</td>
+                <td>${fechaVencMostrar}</td>
+                <td contenteditable="true" data-field="observaciones" data-id="${ext.id}">${ext.observaciones || ''}</td>
+            </tr>
+        `;
+        tbody.append(fila);
+    });
+    
+    // ========== SINCRONIZACIÓN CELDA POR CELDA (TIPO GOOGLE SHEETS) ==========
+    
+    // Detectar cambios en tiempo real (cada tecla)
+    $('[contenteditable="true"]').off('input').on('input', function() {
+        const field = $(this).data('field');
+        const id = parseInt($(this).data('id'));
+        const value = $(this).text().trim();
+        
+        // Emitir cambio a otros usuarios en tiempo real
+        if (socket && socket.connected) {
+            socket.emit('celda_editada', {
+                orden_id: ordenId,
+                extintor_id: id,
+                campo: field,
+                valor: value,
+                usuario: '{{ usuario.user_nombre }}'
+            });
+        }
+    });
+    
+    // AUTO-GUARDAR: Guardar cambios inmediatamente en BD al salir de la celda
+    $('[contenteditable="true"]').off('blur').on('blur', function() {
+        const field = $(this).data('field');
+        const id = parseInt($(this).data('id'));
+        const value = $(this).text().trim();
+        
+        // Actualizar en memoria local
+        if (orden && orden.extintores) {
+            const extintor = orden.extintores.find(e => e.id === id);
+            if (extintor && extintor[field] !== value) {
+                extintor[field] = value;
+                console.log(`💾 Auto-guardando: Extintor ${id} - ${field} = "${value}"`);
+                
+                // Mostrar indicador de guardando
+                mostrarIndicadorGuardando();
+                
+                // Guardar en BD inmediatamente
+                const dataToSave = {};
+                dataToSave[field] = value;
+                
+                const tiempoInicio = Date.now();
+                let huboError = false; // Bandera para saber si hubo error
+                
+                $.ajax({
+                    url: `/api/ordenes/${ordenId}/extintores/${id}`,
+                    method: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(dataToSave),
+                    success: function() {
+                        const tiempoTranscurrido = Date.now() - tiempoInicio;
+                        const tiempoRestante = Math.max(0, 1500 - tiempoTranscurrido);
+                        
+                        console.log(`✅ Guardado en BD: Extintor ${id} - ${field}`);
+                        console.log(`⏱️ Tiempo transcurrido: ${tiempoTranscurrido}ms, esperando: ${tiempoRestante}ms`);
+                        
+                        // Asegurar que el spinner se muestre por al menos 1.5s
+                        setTimeout(function() {
+                            console.log(`⏰ Timeout completado, mostrando check verde`);
+                            mostrarIndicadorGuardado();
+                            // NO mostrar toast en guardado normal
+                        }, tiempoRestante);
+                    },
+                    error: function(xhr) {
+                        console.error(`❌ Error al guardar: ${xhr.responseText}`);
+                        mostrarIndicadorError();
+                        huboError = true; // Marcar que hubo error
+                        
+                        // Mostrar notificación silenciosa (sin bloquear)
+                        mostrarToastSimple('⚠️ Sin conexión. Reintentando...', 'warning');
+                        
+                        // Reintentar cada 3 segundos hasta que se logre guardar
+                        const intervaloReintento = setInterval(function() {
+                            console.log('🔄 Reintentando guardar...');
+                            
+                            $.ajax({
+                                url: `/api/ordenes/${ordenId}/extintores/${id}`,
+                                method: 'PUT',
+                                contentType: 'application/json',
+                                data: JSON.stringify(dataToSave),
+                                success: function() {
+                                    clearInterval(intervaloReintento);
+                                    console.log(`✅ Guardado exitoso después de reintentar`);
+                                    mostrarIndicadorGuardado();
+                                    // SOLO mostrar toast si hubo error previo
+                                    mostrarToastSimple('✅ Conexión restaurada. Cambios guardados', 'success');
+                                },
+                                error: function() {
+                                    console.log('❌ Reintento fallido, esperando...');
+                                }
+                            });
+                        }, 3000);
+                    }
+                });
+            }
+        }
+    });
+    
+    // SIEMPRE mostrar botón "Enviar a Oficina" y badge "Guardado"
+    $('#btnEnviarOficina').show();
+    $('#indicadorAutoGuardado').hide();
+    $('#indicadorGuardado').show();
+    console.log('✅ Botón "Enviar a Oficina" y Badge "Guardado" siempre visibles');
+}
+
+// Funciones para mostrar indicadores de guardado
+function mostrarIndicadorGuardando() {
+    console.log('🟠 [INDICADOR] Mostrando spinner naranja');
+    // Ocultar badge "Guardado" y mostrar spinner con fondo naranja
+    $('#indicadorGuardado').hide();
+    $('#indicadorAutoGuardado').removeClass('bg-success bg-danger').addClass('bg-warning').show();
+    $('#iconoGuardando').show();
+    $('#iconoGuardado').hide();
+    $('#iconoError').hide();
+}
+
+function mostrarIndicadorGuardado() {
+    console.log('🟢 [INDICADOR] Cambiando a check verde');
+    // Cambiar inmediatamente a check verde (el tiempo ya se controló antes)
+    $('#iconoGuardando').hide();
+    $('#indicadorAutoGuardado').removeClass('bg-warning').addClass('bg-success');
+    $('#iconoGuardado').show();
+    
+    // Ocultar después de 3 segundos y restaurar badge "Guardado"
+    setTimeout(function() {
+        console.log('✅ [INDICADOR] Restaurando badge guardado');
+        $('#iconoGuardado').hide();
+        $('#indicadorAutoGuardado').hide();
+        $('#indicadorGuardado').show();
+    }, 3000);
+}
+
+function mostrarIndicadorError() {
+    // Mostrar icono de error con fondo rojo
+    $('#iconoGuardando').hide();
+    $('#iconoGuardado').hide();
+    $('#indicadorAutoGuardado').removeClass('bg-warning bg-success').addClass('bg-danger');
+    $('#iconoError').show();
+    
+    // NO ocultar automáticamente - se ocultará cuando se logre guardar
+    console.log('❌ [INDICADOR] Error - permanecerá hasta que se guarde correctamente');
+}
+
+function ocultarIndicadorGuardado() {
+    $('#indicadorAutoGuardado').hide();
+    $('#indicadorGuardado').show();
+}
+
+function marcarComoRecogido(recogido) {
+    // Si se está marcando como recogido, mostrar confirmación
+    if (recogido) {
+        // Verificar si hay evidencia fotográfica y foto de guía
+        const tieneEvidencia = orden && orden.tiene_evidencia_fotografica;
+        const tieneFotoGuia = orden && orden.tiene_foto_guia;
+        let mensaje = '¿Está seguro de marcar los extintores como recogidos?';
+        let textoBoton = 'Confirmar';
+        
+        // Si falta algún requerimiento, agregar advertencia
+        if (!tieneEvidencia || !tieneFotoGuia) {
+            mensaje += '<br><br><div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 4px;">';
+            mensaje += '<div style="color: #856404; font-weight: bold; font-size: 16px; margin-bottom: 8px;">⚠️ NOTA:</div>';
+            mensaje += '<div style="color: #856404; font-weight: 600;">NO SE AGREGÓ LOS SIGUIENTES REQUERIMIENTOS DEL RECOJO:</div>';
+            
+            if (!tieneFotoGuia) {
+                mensaje += '<div style="color: #856404; margin-top: 6px; margin-left: 10px;">• Foto de Guía de Recojo</div>';
+            }
+            if (!tieneEvidencia) {
+                mensaje += '<div style="color: #856404; margin-top: 6px; margin-left: 10px;">• Evidencia Fotográfica</div>';
+            }
+            
+            mensaje += '</div>';
+            textoBoton = 'Continuar de Todos Modos';
+        }
+        
+        mostrarConfirmacion(mensaje, function() {
+            // Usuario confirmó, proceder con el marcado
+            ejecutarMarcarRecogido(recogido);
+        }, textoBoton);
+        // Revertir el checkbox temporalmente hasta que el usuario confirme
+        $('#checkRecogido').prop('checked', false);
+    } else {
+        // Si se está desmarcando, hacerlo directamente sin confirmación
+        ejecutarMarcarRecogido(recogido);
+    }
+}
+
+function ejecutarMarcarRecogido(recogido) {
+    // Guardar si era primera vez ANTES de hacer el cambio (igual que Registro)
+    console.log('🔍 ANTES del cambio - orden.marcado_recogido_alguna_vez:', orden ? orden.marcado_recogido_alguna_vez : 'orden no existe');
+    const eraPrimeraVez = orden && !orden.marcado_recogido_alguna_vez;
+    console.log('🔍 ANTES del cambio - eraPrimeraVez:', eraPrimeraVez);
+    
+    // Si el usuario confirmó, marcar el checkbox
+    if (recogido) {
+        $('#checkRecogido').prop('checked', true);
+    }
+    
+    fetch('/api/ordenes/' + ordenId + '/marcar-recogido', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ recogido: recogido })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error en la respuesta del servidor');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            console.log('📊 Respuesta marcar-recogido:', data);
+            console.log('🔍 Era primera vez (guardado ANTES):', eraPrimeraVez);
+            
+            if (recogido) {
+                $('#fechaRecogidoInfo').show();
+                $('#fechaRecogidoReal').text('Hoy');
+                
+                cargarOrden().then(() => {
+                    // Solo cambiar de pestaña si era primera vez (valor guardado ANTES)
+                    if (eraPrimeraVez) {
+                        console.log('✅ Primera vez - Cambiando a pestaña de Registro');
+                        setTimeout(() => cambiarEtapa(3, true), 1000);
+                    } else {
+                        console.log('⏸️ No es primera vez - Permaneciendo en pestaña actual');
+                    }
+                });
+            } else {
+                $('#fechaRecogidoInfo').hide();
+                // Solo recargar, NO cambiar de pestaña
+                cargarOrden();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error al marcar como recogido:', error);
+        
+        // Mostrar notificación silenciosa (sin bloquear)
+        mostrarToastSimple('❌ Sin conexión. No se puede cambiar el estado.', 'error');
+        
+        // REVERTIR el checkbox al estado anterior
+        $('#checkRecogido').prop('checked', !recogido);
+    });
+}
+
+function confirmarAsignacionCompleta() {
+    // Verificar que haya trabajadores en memoria temporal
+    if (trabajadoresTemporales.length === 0) {
+        mostrarNotificacion('Debe asignar al menos un trabajador antes de confirmar.', 'warning');
+        return;
+    }
+    
+    // Guardar si era primera vez ANTES de hacer el cambio (igual que Recojo)
+    console.log('🔍 ANTES del cambio - orden.confirmada_asignacion_alguna_vez:', orden ? orden.confirmada_asignacion_alguna_vez : 'orden no existe');
+    const eraPrimeraVez = orden && !orden.confirmada_asignacion_alguna_vez;
+    console.log('🔍 ANTES del cambio - eraPrimeraVez:', eraPrimeraVez);
+    
+    mostrarConfirmacion('¿Confirmar asignación de trabajadores y continuar con el recojo?', function() {
+        // Ocultar el botón inmediatamente
+        $('#btnConfirmarAsignacion').fadeOut(200);
+        
+        // PASO 1: Guardar trabajadores en BD
+        const trabajadoresTexto = trabajadoresTemporales.join(', ');
+        
+        $.ajax({
+            url: `/api/ordenes/${ordenId}/asignar-trabajador`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ trabajador: trabajadoresTexto }),
+            success: function() {
+                console.log('✅ Trabajadores guardados en BD:', trabajadoresTexto);
+                
+                // PASO 2: Confirmar la asignación (cambiar etapa)
+                $.ajax({
+                    url: `/api/ordenes/${ordenId}/confirmar-asignacion`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    success: function(response) {
+                        console.log('✅ Asignación confirmada en BD');
+                        console.log('🔍 Era primera vez (guardado ANTES):', eraPrimeraVez);
+                        
+                        // Limpiar memoria temporal
+                        trabajadoresTemporales = [];
+                        
+                        // Solo cambiar de pestaña si era primera vez (valor guardado ANTES)
+                        if (eraPrimeraVez) {
+                            console.log('✅ Primera vez - Cambiando a pestaña de Recojo');
+                            setTimeout(() => cambiarEtapa(2, true), 1000);
+                        } else {
+                            console.log('⏸️ No es primera vez - Permaneciendo en pestaña actual');
+                            // NO hacer nada más - el botón ya está oculto
+                        }
+                    },
+                    error: function() {
+                        mostrarNotificacion('Error al confirmar asignación', 'error');
+                        $('#btnConfirmarAsignacion').fadeIn(300);
+                    }
+                });
+            },
+            error: function() {
+                mostrarNotificacion('Error al guardar trabajadores', 'error');
+                $('#btnConfirmarAsignacion').fadeIn(300);
+            }
+        });
+    });
+}
+
+function agregarTrabajador() {
+    fetch('/api/usuarios')
+        .then(response => response.json())
+        .then(personal => {
+            const personalActivo = personal.filter(p => p.activo);
+            
+            if (personalActivo.length === 0) {
+                mostrarNotificacion('No hay personal disponible', 'warning');
+                return;
+            }
+            
+            let listaHTML = '<div class="mb-3"><label class="form-label fw-bold">Seleccionar Trabajadores (puedes elegir varios)</label></div>';
+            listaHTML += '<div class="list-group" id="listaTrabajadores">';
+            
+            personalActivo.forEach(p => {
+                const cargo = p.rol === 'TECNICO' ? 'Técnico' : p.rol === 'ADMINISTRATIVO' ? 'Administrativo' : 'Gerente';
+                const badgeColor = p.rol === 'TECNICO' ? 'warning' : p.rol === 'ADMINISTRATIVO' ? 'info' : 'danger';
+                
+                listaHTML += `
+                    <label class="list-group-item d-flex align-items-center">
+                        <input class="form-check-input me-3" type="checkbox" value="${p.id}" data-nombre="${p.nombre_completo}">
+                        <div class="flex-grow-1">
+                            <strong>${p.nombre_completo}</strong>
+                            <br><small class="text-muted">${p.email || 'Sin email'} ${p.telefono ? '• ' + p.telefono : ''}</small>
+                        </div>
+                        <span class="badge bg-${badgeColor}">${cargo}</span>
+                    </label>
+                `;
+            });
+            
+            listaHTML += '</div>';
+            
+            $('#contenidoAsignacion').html(listaHTML + `
+                <div class="mt-3 text-center">
+                    <button class="btn btn-primary" onclick="confirmarAsignacion()">
+                        <i class="bi bi-plus-circle"></i> Cargar Selección
+                    </button>
+                </div>
+            `);
+        });
+}
+
+function eliminarTrabajadorTemporal(nombreTrabajador) {
+    mostrarConfirmacion(`¿Está seguro de eliminar a ${nombreTrabajador}?`, function() {
+        // Verificar si la asignación ya fue confirmada (está en BD)
+        $.getJSON(`/api/ordenes/${ordenId}`, function(data) {
+            const yaConfirmado = data.etapa_actual !== 'CREADA';
+            
+            if (yaConfirmado) {
+                // Si ya está confirmada, eliminar de BD
+                const trabajadoresBD = data.trabajador_asignado ? data.trabajador_asignado.split(', ') : [];
+                const trabajadoresActualizados = trabajadoresBD.filter(t => t !== nombreTrabajador);
+                
+                $.ajax({
+                    url: `/api/ordenes/${ordenId}/asignar-trabajador`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ trabajador: trabajadoresActualizados.join(', ') }),
+                    success: function() {
+                        // Limpiar memoria temporal y recargar
+                        trabajadoresTemporales = [];
+                        cargarOrden();
+                    }
+                });
+            } else {
+                // Si NO está confirmada, eliminar solo de memoria temporal
+                trabajadoresTemporales = trabajadoresTemporales.filter(t => t !== nombreTrabajador);
+                
+                // Actualizar la vista
+                if (trabajadoresTemporales.length > 0) {
+                    let listaTrabajadores = '<div class="list-group">';
+                    trabajadoresTemporales.forEach((t, index) => {
+                        const nombreEscapado = t.replace(/'/g, "\\'");
+                        listaTrabajadores += `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-person-fill text-primary me-2"></i>
+                                    <strong>${t}</strong>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick='eliminarTrabajadorTemporal("${nombreEscapado}")'>
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </div>
+                        `;
+                    });
+                    listaTrabajadores += '</div>';
+                    $('#contenidoAsignacion').html(listaTrabajadores);
+                    $('#btnConfirmarAsignacion').fadeIn(300);
+                } else {
+                    $('#contenidoAsignacion').html(`
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No hay trabajadores asignados. Haga clic en "Agregar Trabajador" para asignar personal a esta orden.
+                        </div>
+                    `);
+                    $('#btnConfirmarAsignacion').fadeOut(200);
+                }
+            }
+        });
+    });
+}
+
+function confirmarAsignacion() {
+    const checkboxes = document.querySelectorAll('#listaTrabajadores input[type="checkbox"]:checked');
+    
+    if (checkboxes.length === 0) {
+        mostrarNotificacion('Por favor selecciona al menos un trabajador', 'warning');
+        return;
+    }
+    
+    const trabajadoresNuevos = [];
+    checkboxes.forEach(cb => {
+        trabajadoresNuevos.push(cb.getAttribute('data-nombre'));
+    });
+    
+    // Agregar a memoria temporal (sin duplicados)
+    trabajadoresTemporales = [...new Set([...trabajadoresTemporales, ...trabajadoresNuevos])];
+    
+    console.log('📝 Trabajadores cargados en memoria temporal:', trabajadoresTemporales);
+    
+    // SOLO actualizar la vista - NO guardar en BD
+    let listaTrabajadores = '<div class="list-group">';
+    trabajadoresTemporales.forEach((t, index) => {
+        const nombreEscapado = t.replace(/'/g, "\\'");
+        listaTrabajadores += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-person-fill text-primary me-2"></i>
+                    <strong>${t}</strong>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick='eliminarTrabajadorTemporal("${nombreEscapado}")'>
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </div>
+        `;
+    });
+    listaTrabajadores += '</div>';
+    
+    $('#contenidoAsignacion').html(listaTrabajadores);
+    
+    // Mostrar botón de confirmar con animación
+    $('#btnConfirmarAsignacion').fadeIn(300);
+}
+
+function enviarARevision() {
+    // Mensaje de confirmación simple (ya no hay cambios pendientes, todo se guarda automáticamente)
+    const mensajeConfirmacion = '¿Está seguro de enviar esta orden a oficina para revisión?';
+    
+    mostrarConfirmacion(mensajeConfirmacion, function() {
+        
+        console.log('🚀 Iniciando guardado de datos...');
+        // Obtener la fecha seleccionada del combobox
+        const fechaSeleccionada = $('#fechaRecargaGlobal').val();
+        console.log('📅 Fecha seleccionada a guardar:', fechaSeleccionada);
+        
+        // Guardar si era primera vez ANTES de enviar
+        const eraPrimeraVez = orden && !orden.enviado_a_oficina;
+        
+        // Enviar a revisión (los datos ya están guardados por auto-save)
+        $.ajax({
+            url: `/api/ordenes/${ordenId}/enviar-revision`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                fecha_recarga_seleccionada: fechaSeleccionada
+            }),
+            success: function() {
+                console.log('✅ Orden enviada a revisión');
+                
+                // Recargar orden
+                cargarOrden().then(() => {
+                    // Si era primera vez, cambiar a pestaña de revisión
+                    if (eraPrimeraVez) {
+                        setTimeout(() => cambiarEtapa(4, true), 1000);
+                    }
+                });
+            },
+            error: function() {
+                mostrarNotificacion('❌ Error al enviar a oficina', 'error');
+            }
+        });
+    });
+}
+
+function finalizarOrden() {
+    mostrarConfirmacion('¿Finalizar orden? Esta acción marcará la orden como completada.', function() {
+    
+    $.ajax({
+        url: `/api/ordenes/${ordenId}/finalizar`,
+        method: 'POST',
+        success: function(response) {
+            // Recargar la orden para mostrar el estado actualizado
+            cargarOrden();
+            
+            // Esperar 2.5 segundos antes de redirigir
+            setTimeout(() => {
+                window.location.href = '/ordenes';
+            }, 2500);
+        },
+        error: function() {
+            mostrarNotificacion('Error al finalizar orden', 'error');
+        }
+    });
+    });
+}
+
+function formatearFecha(fecha) {
+    const d = new Date(fecha + 'T00:00:00');
+    return d.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// ========== FUNCIONES PARA MANEJO DE FOTOS ==========
+let fotosRecojo = [];
+let fotosPendientes = []; // Fotos que aún no se han subido al servidor
+let streamCamara = null;
+
+// Variables para fotos de guía
+let fotosGuia = [];
+let fotosGuiaPendientes = []; // Fotos de guía que aún no se han subido
+let streamCamaraGuia = null;
+
+// ========== SINCRONIZACIÓN EN TIEMPO REAL CON SOCKET.IO ==========
+let socket = null;
+let socketConectado = false;
+let editandoCelda = false; // Flag para evitar bucles infinitos
+
+function inicializarSocketIO() {
+    try {
+        // Conectar al servidor Socket.IO
+        socket = io({
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5
+        });
+        
+        // Evento: Conexión exitosa
+        socket.on('connect', function() {
+            socketConectado = true;
+            console.log('[SYNC] ✅ Conectado al servidor en tiempo real');
+            
+            // Unirse a la sala de esta orden específica
+            socket.emit('unirse_orden', { orden_id: ordenId });
+        });
+        
+        // Evento: Desconexión
+        socket.on('disconnect', function() {
+            socketConectado = false;
+            console.log('[SYNC] ❌ Desconectado del servidor');
+        });
+
+        // ========== SINCRONIZACIÓN CELDA POR CELDA ==========
+        socket.on('actualizar_celda', function(data) {
+            // Solo actualizar si es la misma orden
+            if (data.orden_id === ordenId) {
+                console.log('[CELDA-SYNC] 📝 Actualizando celda:', data.campo, '=', data.valor);
+
+                // Buscar la celda correspondiente y actualizarla
+                const celda = $(`td[data-field="${data.campo}"][data-id="${data.extintor_id}"]`);
+                if (celda.length > 0 && !celda.is(':focus')) {
+                    // Solo actualizar si no está siendo editada actualmente
+                    celda.text(data.valor);
+
+                    // Efecto visual de actualización
+                    celda.css('background-color', '#d4edda');
+                    setTimeout(() => {
+                        celda.css('background-color', '');
+                    }, 1000);
+
+                    // Actualizar en memoria
+                    if (orden && orden.extintores) {
+                        const extintor = orden.extintores.find(e => e.id === data.extintor_id);
+                        if (extintor) {
+                            extintor[data.campo] = data.valor;
+                        }
+                    }
+                }
+            }
+        });
+
+        // Escuchar cambios en órdenes
+        socket.on('cambio_orden', function(evento) {
+            console.log('[SYNC] 🔄 Cambio recibido:', evento);
+
+            // Solo procesar si es de esta orden
+            if (evento.orden_id !== ordenId) {
+                return;
+            }
+            
+            // Manejar diferentes tipos de cambios
+            switch(evento.tipo) {
+                case 'orden_actualizada':
+                    console.log('[SYNC] 📝 Orden actualizada - NO recargar (auto-guardado activo)');
+                    // NO recargar para no interrumpir el indicador de guardado
+                    break;
+                    
+                case 'foto_evidencia_agregada':
+                    console.log('[SYNC] 📸 Foto de evidencia agregada');
+                    // Primero actualizar checkbox y mostrar sección, LUEGO cargar fotos
+                    cargarOrden(true).then(() => {
+                        cargarFotosDesdeServidor();
+                    });
+                    break;
+                    
+                case 'foto_evidencia_eliminada':
+                    console.log('[SYNC] 🗑️ Foto de evidencia eliminada');
+                    // Primero actualizar checkbox, LUEGO cargar fotos
+                    cargarOrden(true).then(() => {
+                        cargarFotosDesdeServidor();
+                    });
+                    break;
+                    
+                case 'foto_guia_agregada':
+                    console.log('[SYNC] 📄 Foto de guía agregada');
+                    // Primero actualizar checkbox y mostrar sección, LUEGO cargar fotos
+                    cargarOrden(true).then(() => {
+                        cargarFotosGuiaDesdeServidor();
+                    });
+                    break;
+                    
+                case 'foto_guia_eliminada':
+                    console.log('[SYNC] 🗑️ Foto de guía eliminada');
+                    // Primero actualizar checkbox, LUEGO cargar fotos
+                    cargarOrden(true).then(() => {
+                        cargarFotosGuiaDesdeServidor();
+                    });
+                    break;
+                    
+                case 'recogido_actualizado':
+                    console.log('[SYNC] ✅ Estado de recogido actualizado');
+                    cargarOrden();
+                    break;
+                    
+                case 'celda_actualizada':
+                    console.log('[SYNC] 📝 Celda actualizada - NO recargar (auto-guardado activo)');
+                    // NO recargar para no interrumpir el indicador de guardado
+                    break;
+                    
+                case 'trabajadores_asignados':
+                    console.log('[SYNC] 👥 Trabajadores asignados');
+                    // NO recargar si estoy en la misma página para evitar parpadeo del botón
+                    break;
+                    
+                case 'trabajadores_confirmados':
+                    console.log('[SYNC] ✅ Trabajadores confirmados');
+                    // NO recargar si estoy en la misma página para evitar parpadeo del botón
+                    break;
+                    
+                default:
+                    console.log('[SYNC] ℹ️ Tipo de cambio no manejado:', evento.tipo);
+                    // Por defecto, recargar la orden
+                    cargarOrden();
+            }
+        });
+        
+        // Evento: Cambio de fecha de recarga (fuera del switch, escucha global)
+        socket.on('fecha_recarga_cambiada', function(data) {
+            console.log('[SYNC] 📅 Fecha de recarga cambiada:', data);
+            if (data.orden_id === ordenId) {
+                console.log('[SYNC] 📅 Actualizando fecha en selector:', data.fecha);
+                $('#fechaRecargaGlobal').val(data.fecha);
+                actualizarFechasTabla();
+            }
+        });
+        
+        // Evento: Error de conexión
+        socket.on('connect_error', function(error) {
+            console.error('[SYNC] ❌ Error de conexión:', error);
+        });
+        
+    } catch (error) {
+        console.error('[SYNC] ❌ Error al inicializar Socket.IO:', error);
+    }
+}
+
+// Función para emitir cambio de fecha de recarga
+function emitirCambioFechaRecarga() {
+    const fecha = $('#fechaRecargaGlobal').val();
+    if (socket && socket.connected && fecha) {
+        socket.emit('cambio_fecha_recarga', {
+            orden_id: ordenId,
+            fecha: fecha
+        });
+        console.log('[SYNC] 📅 Emitiendo cambio de fecha:', fecha);
+    }
+}
+
+// Función para guardar fecha de recarga en BD automáticamente
+function guardarFechaRecargaEnBD() {
+    const fecha = $('#fechaRecargaGlobal').val();
+    if (!fecha) {
+        console.log('⚠️ No hay fecha seleccionada');
+        return;
+    }
+    
+    console.log('💾 Auto-guardando fecha de recarga:', fecha);
+    console.log('📍 URL:', `/api/ordenes/${ordenId}/guardar-fecha-recarga`);
+    
+    // Mostrar indicador de guardando
+    mostrarIndicadorGuardando();
+    
+    const tiempoInicio = Date.now();
+    let huboError = false; // Bandera para saber si hubo error
+    
+    // Guardar en BD
+    $.ajax({
+        url: `/api/ordenes/${ordenId}/guardar-fecha-recarga`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ fecha_recarga_seleccionada: fecha }),
+        success: function(response) {
+            console.log('✅ Fecha de recarga guardada en BD:', response);
+            
+            // Asegurar que el spinner se muestre por al menos 1.5s
+            const tiempoTranscurrido = Date.now() - tiempoInicio;
+            const tiempoRestante = Math.max(0, 1500 - tiempoTranscurrido);
+            
+            setTimeout(function() {
+                mostrarIndicadorGuardado();
+                // NO mostrar toast en guardado normal
+            }, tiempoRestante);
+        },
+        error: function(xhr, status, error) {
+            console.error('❌ Error al guardar fecha');
+            console.error('Status:', status);
+            console.error('Error:', error);
+            console.error('Response:', xhr.responseText);
+            mostrarIndicadorError();
+            huboError = true; // Marcar que hubo error
+            
+            // Mostrar notificación silenciosa (sin bloquear)
+            mostrarToastSimple('⚠️ Sin conexión. Reintentando...', 'warning');
+            
+            // Reintentar cada 3 segundos hasta que se logre guardar
+            const intervaloReintento = setInterval(function() {
+                console.log('🔄 Reintentando guardar fecha...');
+                
+                $.ajax({
+                    url: `/api/ordenes/${ordenId}/guardar-fecha-recarga`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ fecha_recarga_seleccionada: fecha }),
+                    success: function(response) {
+                        clearInterval(intervaloReintento);
+                        console.log('✅ Fecha guardada después de reintentar');
+                        
+                        const tiempoTranscurrido = Date.now() - tiempoInicio;
+                        const tiempoRestante = Math.max(0, 1500 - tiempoTranscurrido);
+                        
+                        setTimeout(function() {
+                            mostrarIndicadorGuardado();
+                        }, tiempoRestante);
+                        
+                        // SOLO mostrar toast si hubo error previo
+                        mostrarToastSimple('✅ Conexión restaurada. Fecha guardada', 'success');
+                    },
+                    error: function() {
+                        console.log('❌ Reintento fallido, esperando...');
+                    }
+                });
+            }, 3000);
+        }
+    });
+}
+
+// ========== FIN SINCRONIZACIÓN EN TIEMPO REAL ==========
+
+function toggleEvidenciaFotografica(mostrar) {
+    // Si hay fotos pendientes (con error), NO permitir desmarcar
+    if (!mostrar && fotosPendientes.length > 0) {
+        $('#checkEvidenciaFotografica').prop('checked', true);
+        mostrarToastSimple('❌ Hay fotos pendientes de subir. Espera a que se suban o elimínalas primero.', 'error');
+        return;
+    }
+    
+    // Si hay fotos y se intenta desmarcar, pedir confirmación
+    if (!mostrar && fotosRecojo.length > 0) {
+        $('#checkEvidenciaFotografica').prop('checked', true);
+        
+        let mensaje = '¿Estás seguro de desactivar la evidencia fotográfica?';
+        mensaje += '<br><br><div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 4px;">';
+        mensaje += '<div style="color: #856404; font-weight: bold; font-size: 16px; margin-bottom: 8px;">⚠️ ADVERTENCIA:</div>';
+        mensaje += `<div style="color: #856404; font-weight: 600;">Hay ${fotosRecojo.length} foto(s) cargada(s).</div>`;
+        mensaje += '<div style="color: #856404; margin-top: 6px;">Si desactivas la evidencia fotográfica, se eliminarán TODAS las fotos permanentemente.</div>';
+        mensaje += '</div>';
+        
+        mostrarConfirmacion(
+            mensaje,
+            function() {
+                // Usuario confirmó desde toggle checkbox, eliminar todas las fotos Y desmarcar checkbox
+                eliminarTodasLasFotos(true);
+            },
+            'Continuar de Todos Modos'
+        );
+        return;
+    }
+    
+    if (mostrar) {
+        $('#seccionFotos').slideDown(300);
+    } else {
+        $('#seccionFotos').slideUp(300);
+    }
+}
+
+function mostrarToastSimple(mensaje, tipo = 'info') {
+    console.log(`📢 [TOAST] Mostrando: ${mensaje} (${tipo})`);
+    
+    // Crear toast temporal sin necesidad de contenedor predefinido
+    const colores = {
+        'info': 'bg-info text-white',
+        'success': 'bg-success text-white',
+        'warning': 'bg-warning text-dark',
+        'error': 'bg-danger text-white'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = `position-fixed bottom-0 end-0 p-3`;
+    toast.style.zIndex = '99999';
+    toast.style.animation = 'slideInRight 0.3s ease-out';
+    toast.innerHTML = `
+        <div class="toast show ${colores[tipo]}" role="alert" style="min-width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <div class="toast-body" style="font-size: 1.1rem; font-weight: 600; padding: 15px;">
+                ${mensaje}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    console.log(`📢 [TOAST] Toast agregado al DOM`);
+    
+    // Auto-eliminar después de 4 segundos (más tiempo para que se vea bien)
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            toast.remove();
+            console.log(`📢 [TOAST] Toast eliminado`);
+        }, 300);
+    }, 4000);
+}
+
+function confirmarEliminarTodasFotos() {
+    // Contar fotos directamente del DOM
+    const galeria = document.getElementById('galeriaFotosRecojo');
+    const totalFotos = galeria.querySelectorAll('.col-6, .col-md-4, .col-lg-3').length;
+    
+    if (totalFotos === 0) {
+        mostrarToastSimple('No hay fotos para eliminar', 'warning');
+        return;
+    }
+    
+    mostrarConfirmacion(
+        `¿Estás seguro de eliminar TODAS las ${totalFotos} foto(s)? Esta acción no se puede deshacer.`,
+        function() {
+            eliminarTodasLasFotos();
+        }
+    );
+}
+
+function eliminarTodasLasFotos(desmarcarCheckbox = false) {
+    // Mostrar toast temporal (se cierra automáticamente)
+    mostrarToastSimple('Eliminando todas las fotos...', 'info');
+    
+    const galeria = document.getElementById('galeriaFotosRecojo');
+    
+    // Eliminar TODAS las fotos del DOM (TODAS, sin excepción)
+    while (galeria.firstChild) {
+        galeria.removeChild(galeria.firstChild);
+    }
+    
+    // Limpiar arrays
+    fotosPendientes = [];
+    
+    // Crear array de promesas para eliminar todas las fotos del servidor
+    const promesasEliminacion = fotosRecojo.map(foto => {
+        return fetch(`/api/ordenes/${ordenId}/fotos/${foto.id}`, {
+            method: 'DELETE'
+        }).then(response => response.json());
+    });
+    
+    // Esperar a que todas las fotos se eliminen
+    Promise.all(promesasEliminacion)
+        .then(resultados => {
+            const exitosas = resultados.filter(r => r.success).length;
+            const fallidas = resultados.length - exitosas;
+            
+            // Solo mostrar mensaje si hubo errores
+            if (fallidas > 0) {
+                mostrarNotificacion(`${exitosas} foto(s) eliminada(s), ${fallidas} fallaron`, 'warning');
+            }
+            
+            // Recargar galería
+            cargarFotosDesdeServidor();
+            
+            // Recargar orden para actualizar el campo tiene_evidencia_fotografica en BD
+            cargarOrden().then(() => {
+                // Solo si viene del toggle del checkbox, desmarcar y ocultar
+                if (desmarcarCheckbox) {
+                    $('#checkEvidenciaFotografica').prop('checked', false);
+                    $('#seccionFotos').slideUp(300);
+                }
+            });
+        })
+        .catch(error => {
+            console.error('❌ Error al eliminar fotos:', error);
+            
+            // Mostrar notificación silenciosa (sin bloquear)
+            mostrarToastSimple('❌ Error al eliminar fotos. Revierte el checkbox.', 'error');
+            
+            // REVERTIR el checkbox al estado anterior
+            $('#checkEvidenciaFotografica').prop('checked', true);
+            $('#seccionFotos').slideDown(300);
+        })
+        .finally(() => {
+            // Limpiar cualquier backdrop que haya quedado
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                    backdrop.remove();
+                });
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 100);
+        });
+}
+
+function abrirCamara() {
+    const modalElement = document.getElementById('modalCamara');
+    const video = document.getElementById('videoCamara');
+    
+    // Verificar HTTPS (requerido en móviles excepto localhost)
+    const isSecure = window.location.protocol === 'https:' || 
+                     window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1';
+    
+    if (!isSecure) {
+        mostrarNotificacion('La cámara requiere HTTPS en dispositivos móviles. Usa "Cargar Foto" en su lugar.', 'warning');
+        return;
+    }
+    
+    // Verificar si el navegador soporta getUserMedia
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        mostrarNotificacion('Tu navegador no soporta acceso a la cámara. Usa "Cargar Foto" en su lugar.', 'error');
+        return;
+    }
+    
+    // Configuración de cámara optimizada para móviles
+    const constraints = {
+        video: {
+            facingMode: { ideal: 'environment' }, // Preferir cámara trasera
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 }
+        },
+        audio: false
+    };
+    
+    // Solicitar acceso a la cámara
+    navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+        streamCamara = stream;
+        video.srcObject = stream;
+        
+        // Esperar a que el video esté listo antes de mostrar el modal
+        video.onloadedmetadata = function() {
+            video.play();
+            // Usar la instancia existente o crear una nueva
+            let modal = bootstrap.Modal.getInstance(modalElement);
+            if (!modal) {
+                modal = new bootstrap.Modal(modalElement);
+            }
+            modal.show();
+        };
+    })
+    .catch(function(err) {
+        console.error('Error al acceder a la cámara:', err);
+        let mensaje = 'No se pudo acceder a la cámara.';
+        
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            mensaje = 'Permiso de cámara denegado. Por favor, permite el acceso en la configuración de tu navegador.';
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            mensaje = 'No se encontró ninguna cámara en tu dispositivo.';
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            mensaje = 'La cámara está siendo usada por otra aplicación.';
+        }
+        
+        mostrarNotificacion(mensaje, 'error');
+    });
+    
+    // Detener cámara al cerrar modal (solo agregar listener una vez)
+    modalElement.removeEventListener('hidden.bs.modal', detenerCamara);
+    modalElement.addEventListener('hidden.bs.modal', detenerCamara);
+}
+
+function detenerCamara() {
+    if (streamCamara) {
+        streamCamara.getTracks().forEach(track => track.stop());
+        streamCamara = null;
+    }
+    
+    // Limpiar video
+    const video = document.getElementById('videoCamara');
+    if (video) {
+        video.srcObject = null;
+    }
+}
+
+function capturarFoto() {
+    const video = document.getElementById('videoCamara');
+    const canvas = document.getElementById('canvasFoto');
+    const context = canvas.getContext('2d');
+    
+    // Verificar que el video esté reproduciendo
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+        mostrarNotificacion('Espera a que la cámara esté lista', 'warning');
+        return;
+    }
+    
+    // Configurar canvas con el tamaño del video
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    
+    // Dibujar el frame actual del video en el canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convertir a blob
+    canvas.toBlob(function(blob) {
+        if (!blob) {
+            mostrarNotificacion('Error al capturar la foto', 'error');
+            return;
+        }
+        
+        const file = new File([blob], `foto_recojo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        agregarFotoAGaleria(file);
+        
+        // Cerrar modal con animación
+        const modalElement = document.getElementById('modalCamara');
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+        
+        // Detener cámara después de que el modal empiece a cerrarse
+        detenerCamara();
+        
+        // Limpiar backdrops DESPUÉS de que termine la animación del modal
+        modalElement.addEventListener('hidden.bs.modal', function limpiarBackdrops() {
+            // Eliminar TODOS los backdrops que puedan existir
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.remove();
+            });
+            
+            // Resetear body si quedó bloqueado
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
+            // Remover este listener para que no se acumule
+            modalElement.removeEventListener('hidden.bs.modal', limpiarBackdrops);
+        }, { once: true });
+    }, 'image/jpeg', 0.85);
+}
+
+function subirFotosRecojo(files) {
+    if (files.length === 0) return;
+    
+    Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+            agregarFotoAGaleria(file);
+        }
+    });
+}
+
+function agregarFotoAGaleria(file) {
+    const tempId = 'temp_' + Date.now();
+    
+    // Agregar a fotos pendientes
+    fotosPendientes.push({ id: tempId, file: file, subida: false });
+    console.log(`📸 [FOTO] Agregada a pendientes. Total pendientes: ${fotosPendientes.length}`);
+    
+    // Crear preview temporal con indicador de carga
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const galeria = document.getElementById('galeriaFotosRecojo');
+        
+        // Agregar foto temporal con spinner
+        const fotoTemp = document.createElement('div');
+        fotoTemp.id = tempId;
+        fotoTemp.className = 'col-6 col-md-4 col-lg-3 mb-3';
+        fotoTemp.innerHTML = `
+            <div class="position-relative">
+                <img src="${e.target.result}" class="img-fluid rounded">
+                <div class="position-absolute top-50 start-50 translate-middle">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Subiendo...</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        galeria.appendChild(fotoTemp);
+        
+        // Intentar subir la foto
+        intentarSubirFoto(file, tempId, e.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
+function intentarSubirFoto(file, tempId, dataUrl) {
+    const formData = new FormData();
+    formData.append('foto', file);
+    
+    fetch(`/api/ordenes/${ordenId}/fotos`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Foto guardada en servidor:', data.foto);
+            
+            // Marcar como subida y eliminar de pendientes
+            fotosPendientes = fotosPendientes.filter(f => f.id !== tempId);
+            
+            // Recargar galería desde el servidor y resaltar la última foto
+            cargarFotosDesdeServidor(true);
+            // Recargar orden para actualizar el campo tiene_evidencia_fotografica
+            cargarOrden();
+        } else {
+            throw new Error('Error del servidor');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error al guardar foto:', error);
+        
+        // Mostrar foto normal con indicador de error pequeño
+        const fotoTemp = document.getElementById(tempId);
+        if (fotoTemp) {
+            fotoTemp.innerHTML = `
+                <div class="position-relative">
+                    <img src="${dataUrl}" class="img-fluid rounded">
+                    <div class="position-absolute top-0 end-0 m-1">
+                        <span class="badge bg-danger" title="Error al subir. Reintentando...">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </span>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 end-0 bg-danger bg-opacity-75 text-white text-center py-1" style="font-size: 0.75rem;">
+                        Reintentando...
+                    </div>
+                </div>
+            `;
+        }
+        
+        mostrarToastSimple('⚠️ Sin conexión. Reintentando subir foto...', 'warning');
+        
+        // Reintentar cada 3 segundos
+        const intervaloReintento = setInterval(function() {
+            console.log('🔄 Reintentando subir foto...');
+            
+            fetch(`/api/ordenes/${ordenId}/fotos`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    clearInterval(intervaloReintento);
+                    console.log('✅ Foto subida exitosamente después de reintentar');
+                    
+                    // Marcar como subida y eliminar de pendientes
+                    fotosPendientes = fotosPendientes.filter(f => f.id !== tempId);
+                    
+                    // Recargar galería desde el servidor
+                    cargarFotosDesdeServidor(true);
+                    cargarOrden();
+                    
+                    mostrarToastSimple('✅ Foto subida correctamente', 'success');
+                }
+            })
+            .catch(err => {
+                console.log('❌ Reintento fallido, esperando...');
+            });
+        }, 3000);
+    });
+}
+
+function cargarFotosDesdeServidor(resaltarUltima = false) {
+    fetch(`/api/ordenes/${ordenId}/fotos`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            fotosRecojo = data.fotos;
+            mostrarGaleriaFotos(resaltarUltima);
+            console.log(`📸 ${data.total} foto(s) cargadas desde servidor`);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error al cargar fotos:', error);
+    });
+}
+
+function mostrarGaleriaFotos(resaltarUltima = false) {
+    const galeria = document.getElementById('galeriaFotosRecojo');
+    const btnEliminarTodas = document.getElementById('btnEliminarTodasFotos');
+    
+    // Mostrar/ocultar botón "Eliminar Todas" según si hay fotos cargadas O pendientes
+    const totalFotos = fotosRecojo.length + fotosPendientes.length;
+    if (totalFotos > 0) {
+        btnEliminarTodas.style.display = 'block';
+    } else {
+        btnEliminarTodas.style.display = 'none';
+    }
+    
+    // Guardar fotos pendientes antes de limpiar
+    const elementosPendientes = [];
+    fotosPendientes.forEach(fotoPendiente => {
+        const elemento = document.getElementById(fotoPendiente.id);
+        if (elemento) {
+            elementosPendientes.push(elemento.cloneNode(true));
+        }
+    });
+    
+    if (fotosRecojo.length === 0 && fotosPendientes.length === 0) {
+        galeria.innerHTML = '<div class="col-12"><p class="text-muted text-center mb-0"><i class="bi bi-images"></i> No hay fotos agregadas</p></div>';
+        return;
+    }
+    
+    let html = '';
+    fotosRecojo.forEach((foto, index) => {
+        const fechaFormateada = new Date(foto.fecha_captura).toLocaleString('es-ES');
+        const tamanioKB = (foto.tamanio_bytes / 1024).toFixed(1);
+        // Como las fotos están ordenadas DESC (más reciente primero), la última agregada es índice 0
+        const esUltima = resaltarUltima && index === 0;
+        const claseResaltado = esUltima ? 'foto-nueva-resaltada' : '';
+        
+        html += `
+            <div class="col-md-4 col-lg-3">
+                <div class="card ${claseResaltado}" id="foto-card-${index}">
+                    <img src="${foto.url}" class="card-img-top" style="height: 150px; object-fit: cover; cursor: pointer;" onclick="verFotoCompleta(${index})">
+                    <div class="card-body p-2">
+                        <small class="text-muted d-block text-truncate">${foto.nombre_archivo}</small>
+                        <small class="text-muted d-block">${fechaFormateada}</small>
+                        <small class="text-muted d-block">${tamanioKB} KB</small>
+                        <button class="btn btn-sm btn-danger w-100 mt-1" onclick="eliminarFotoServidor(${foto.id})">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    galeria.innerHTML = html;
+    
+    // Restaurar fotos pendientes
+    elementosPendientes.forEach(elemento => {
+        galeria.appendChild(elemento);
+    });
+    
+    // Si se debe resaltar la última foto agregada (ahora en índice 0), quitar el resaltado después de 5 segundos
+    if (resaltarUltima && fotosRecojo.length > 0) {
+        const ultimaFotoCard = document.getElementById('foto-card-0');
+        if (ultimaFotoCard) {
+            // Scroll suave hacia la primera foto (que es la más reciente)
+            ultimaFotoCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Quitar resaltado después de 5 segundos
+            setTimeout(() => {
+                ultimaFotoCard.classList.remove('foto-nueva-resaltada');
+            }, 5000);
+        }
+    }
+}
+
+function verFotoCompleta(index) {
+    const foto = fotosRecojo[index];
+    const modal = new bootstrap.Modal(document.createElement('div'));
+    
+    const modalHTML = `
+        <div class="modal fade" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${foto.nombre}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="${foto.url}" class="img-fluid" style="max-height: 70vh;">
+                    </div>
+                    <div class="modal-footer">
+                        <small class="text-muted me-auto">${foto.fecha}</small>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const modalElement = document.createElement('div');
+    modalElement.innerHTML = modalHTML;
+    document.body.appendChild(modalElement.firstElementChild);
+    
+    const modalInstance = new bootstrap.Modal(modalElement.firstElementChild);
+    modalInstance.show();
+    
+    modalElement.firstElementChild.addEventListener('hidden.bs.modal', function () {
+        modalElement.remove();
+    });
+}
+
+function eliminarFotoServidor(fotoId) {
+    mostrarConfirmacion(
+        '¿Eliminar esta foto permanentemente?',
+        function() {
+            fetch(`/api/ordenes/${ordenId}/fotos/${fotoId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarToastSimple('✅ Foto eliminada', 'success');
+                    cargarFotosDesdeServidor();
+                    // Recargar orden para actualizar el campo tiene_evidencia_fotografica
+                    cargarOrden();
+                } else {
+                    mostrarToastSimple('❌ Error al eliminar foto', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error al eliminar foto:', error);
+                mostrarToastSimple('❌ Error al eliminar foto', 'error');
+            });
+        }
+    );
+}
+
+// ========== FUNCIONES PARA MANEJO DE FOTOS DE GUÍA DE RECOJO ==========
+
+function toggleFotoGuia(mostrar) {
+    // Si hay fotos pendientes (con error), NO permitir desmarcar
+    if (!mostrar && fotosGuiaPendientes.length > 0) {
+        $('#checkFotoGuia').prop('checked', true);
+        mostrarToastSimple('❌ Hay fotos de guía pendientes de subir. Espera a que se suban o elimínalas primero.', 'error');
+        return;
+    }
+    
+    // Si hay fotos y se intenta desmarcar, pedir confirmación
+    if (!mostrar && fotosGuia.length > 0) {
+        $('#checkFotoGuia').prop('checked', true);
+        
+        let mensaje = '¿Estás seguro de desactivar la foto de guía de recojo?';
+        mensaje += '<br><br><div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 4px;">';
+        mensaje += '<div style="color: #856404; font-weight: bold; font-size: 16px; margin-bottom: 8px;">⚠️ ADVERTENCIA:</div>';
+        mensaje += `<div style="color: #856404; font-weight: 600;">Hay ${fotosGuia.length} foto(s) cargada(s).</div>`;
+        mensaje += '<div style="color: #856404; margin-top: 6px;">Si desactivas la foto de guía, se eliminarán TODAS las fotos permanentemente.</div>';
+        mensaje += '</div>';
+        
+        mostrarConfirmacion(
+            mensaje,
+            function() {
+                // Usuario confirmó desde toggle checkbox, eliminar todas las fotos Y desmarcar checkbox
+                eliminarTodasLasFotosGuia(true);
+            },
+            'Continuar de Todos Modos'
+        );
+        return;
+    }
+    
+    if (mostrar) {
+        $('#seccionFotosGuia').slideDown(300);
+    } else {
+        $('#seccionFotosGuia').slideUp(300);
+    }
+}
+
+function abrirCamaraGuia() {
+    const modal = new bootstrap.Modal(document.getElementById('modalCamaraGuia'));
+    modal.show();
+    
+    // Acceder a la cámara
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+            streamCamaraGuia = stream;
+            document.getElementById('videoCamaraGuia').srcObject = stream;
+        })
+        .catch(error => {
+            console.error('Error al acceder a la cámara:', error);
+            mostrarNotificacion('No se pudo acceder a la cámara', 'error');
+        });
+    
+    // Detener cámara al cerrar modal
+    document.getElementById('modalCamaraGuia').addEventListener('hidden.bs.modal', function () {
+        if (streamCamaraGuia) {
+            streamCamaraGuia.getTracks().forEach(track => track.stop());
+            streamCamaraGuia = null;
+        }
+    });
+}
+
+function capturarFotoGuia() {
+    const video = document.getElementById('videoCamaraGuia');
+    const canvas = document.getElementById('canvasFotoGuia');
+    const context = canvas.getContext('2d');
+    
+    // Establecer dimensiones del canvas
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Dibujar frame actual del video en el canvas
+    context.drawImage(video, 0, 0);
+    
+    // Convertir canvas a blob
+    canvas.toBlob(blob => {
+        if (!blob) {
+            mostrarNotificacion('Error al capturar la foto', 'error');
+            return;
+        }
+        
+        const file = new File([blob], `guia_recojo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        agregarFotoGuiaAGaleria(file);
+        
+        // Cerrar modal con animación
+        const modalElement = document.getElementById('modalCamaraGuia');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Detener stream de cámara
+        if (streamCamaraGuia) {
+            streamCamaraGuia.getTracks().forEach(track => track.stop());
+            streamCamaraGuia = null;
+        }
+    }, 'image/jpeg', 0.85);
+}
+
+function subirFotosGuia(files) {
+    if (files.length === 0) return;
+    
+    Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+            agregarFotoGuiaAGaleria(file);
+        }
+    });
+}
+
+function agregarFotoGuiaAGaleria(file) {
+    const tempId = 'temp_guia_' + Date.now();
+    
+    // Agregar a fotos de guía pendientes
+    fotosGuiaPendientes.push({ id: tempId, file: file, subida: false });
+    console.log(`📸 [FOTO GUIA] Agregada a pendientes. Total pendientes: ${fotosGuiaPendientes.length}`);
+    
+    // Crear preview temporal con indicador de carga
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const galeria = document.getElementById('galeriaFotosGuia');
+        
+        // Agregar foto temporal con spinner
+        const fotoTemp = document.createElement('div');
+        fotoTemp.id = tempId;
+        fotoTemp.className = 'col-6 col-md-4 col-lg-3 mb-3';
+        fotoTemp.innerHTML = `
+            <div class="position-relative">
+                <img src="${e.target.result}" class="img-fluid rounded">
+                <div class="position-absolute top-50 start-50 translate-middle">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Subiendo...</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        galeria.appendChild(fotoTemp);
+        
+        // Intentar subir la foto
+        intentarSubirFotoGuia(file, tempId, e.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
+function intentarSubirFotoGuia(file, tempId, dataUrl) {
+    const formData = new FormData();
+    formData.append('foto', file);
+    
+    fetch(`/api/ordenes/${ordenId}/fotos-guia`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Foto de guía guardada en servidor:', data.foto);
+            
+            // Marcar como subida y eliminar de pendientes
+            fotosGuiaPendientes = fotosGuiaPendientes.filter(f => f.id !== tempId);
+            
+            // Recargar galería desde el servidor y resaltar la última foto
+            cargarFotosGuiaDesdeServidor(true);
+            // Recargar orden para actualizar el campo tiene_foto_guia
+            cargarOrden();
+        } else {
+            throw new Error('Error del servidor');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error al guardar foto de guía:', error);
+        
+        // Mostrar foto normal con indicador de error pequeño
+        const fotoTemp = document.getElementById(tempId);
+        if (fotoTemp) {
+            fotoTemp.innerHTML = `
+                <div class="position-relative">
+                    <img src="${dataUrl}" class="img-fluid rounded">
+                    <div class="position-absolute top-0 end-0 m-1">
+                        <span class="badge bg-danger" title="Error al subir. Reintentando...">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </span>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 end-0 bg-danger bg-opacity-75 text-white text-center py-1" style="font-size: 0.75rem;">
+                        Reintentando...
+                    </div>
+                </div>
+            `;
+        }
+        
+        mostrarToastSimple('⚠️ Sin conexión. Reintentando subir foto de guía...', 'warning');
+        
+        // Reintentar cada 3 segundos
+        const intervaloReintento = setInterval(function() {
+            console.log('🔄 Reintentando subir foto de guía...');
+            
+            fetch(`/api/ordenes/${ordenId}/fotos-guia`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    clearInterval(intervaloReintento);
+                    console.log('✅ Foto de guía subida exitosamente después de reintentar');
+                    
+                    // Marcar como subida y eliminar de pendientes
+                    fotosGuiaPendientes = fotosGuiaPendientes.filter(f => f.id !== tempId);
+                    
+                    // Recargar galería desde el servidor
+                    cargarFotosGuiaDesdeServidor(true);
+                    cargarOrden();
+                    
+                    mostrarToastSimple('✅ Foto de guía subida correctamente', 'success');
+                }
+            })
+            .catch(err => {
+                console.log('❌ Reintento fallido, esperando...');
+            });
+        }, 3000);
+    });
+}
+
+function cargarFotosGuiaDesdeServidor(resaltarUltima = false) {
+    fetch(`/api/ordenes/${ordenId}/fotos-guia`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            fotosGuia = data.fotos;
+            mostrarGaleriaFotosGuia(resaltarUltima);
+            console.log(`📸 ${data.total} foto(s) de guía cargadas desde servidor`);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error al cargar fotos de guía:', error);
+    });
+}
+
+function mostrarGaleriaFotosGuia(resaltarUltima = false) {
+    const galeria = document.getElementById('galeriaFotosGuia');
+    const btnEliminarTodas = document.getElementById('btnEliminarTodasFotosGuia');
+    
+    // Mostrar/ocultar botón "Eliminar Todas" según si hay fotos cargadas
+    if (fotosGuia.length > 0) {
+        btnEliminarTodas.style.display = 'block';
+    } else {
+        btnEliminarTodas.style.display = 'none';
+    }
+    
+    if (fotosGuia.length === 0) {
+        galeria.innerHTML = '<div class="col-12"><p class="text-muted text-center mb-0"><i class="bi bi-images"></i> No hay fotos agregadas</p></div>';
+        return;
+    }
+    
+    let html = '';
+    fotosGuia.forEach((foto, index) => {
+        const fechaFormateada = new Date(foto.fecha_captura).toLocaleString('es-ES');
+        const tamanioKB = (foto.tamanio_bytes / 1024).toFixed(1);
+        // Como las fotos están ordenadas DESC (más reciente primero), la última agregada es índice 0
+        const esUltima = resaltarUltima && index === 0;
+        const claseResaltado = esUltima ? 'foto-nueva-resaltada' : '';
+        
+        html += `
+            <div class="col-md-4 col-lg-3">
+                <div class="card ${claseResaltado}" id="foto-guia-card-${index}">
+                    <img src="${foto.url}" class="card-img-top" style="height: 150px; object-fit: cover; cursor: pointer;" onclick="verFotoGuiaCompleta(${index})">
+                    <div class="card-body p-2">
+                        <small class="text-muted d-block text-truncate">${foto.nombre_archivo}</small>
+                        <small class="text-muted d-block">${fechaFormateada}</small>
+                        <small class="text-muted d-block">${tamanioKB} KB</small>
+                        <button class="btn btn-sm btn-danger w-100 mt-1" onclick="eliminarFotoGuiaServidor(${foto.id})">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    galeria.innerHTML = html;
+    
+    // Si se debe resaltar la última foto agregada (ahora en índice 0), quitar el resaltado después de 5 segundos
+    if (resaltarUltima && fotosGuia.length > 0) {
+        const ultimaFotoCard = document.getElementById('foto-guia-card-0');
+        if (ultimaFotoCard) {
+            // Scroll suave hacia la primera foto (que es la más reciente)
+            ultimaFotoCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Quitar resaltado después de 5 segundos
+            setTimeout(() => {
+                ultimaFotoCard.classList.remove('foto-nueva-resaltada');
+            }, 5000);
+        }
+    }
+}
+
+function verFotoGuiaCompleta(index) {
+    const foto = fotosGuia[index];
+    if (!foto) return;
+    
+    // Crear modal para ver foto completa
+    const modalHtml = `
+        <div class="modal fade" id="modalVerFotoGuia" tabindex="-1">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Foto de Guía - ${foto.nombre_archivo}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center p-0">
+                        <img src="${foto.url}" class="img-fluid" style="max-height: 80vh;">
+                    </div>
+                    <div class="modal-footer">
+                        <small class="text-muted me-auto">${new Date(foto.fecha_captura).toLocaleString('es-ES')} - ${(foto.tamanio_bytes / 1024).toFixed(1)} KB</small>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Eliminar modal anterior si existe
+    const modalAnterior = document.getElementById('modalVerFotoGuia');
+    if (modalAnterior) {
+        modalAnterior.remove();
+    }
+    
+    // Agregar nuevo modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalVerFotoGuia'));
+    modal.show();
+    
+    // Limpiar modal al cerrar
+    document.getElementById('modalVerFotoGuia').addEventListener('hidden.bs.modal', function () {
+        this.remove();
+    });
+}
+
+function confirmarEliminarTodasFotosGuia() {
+    if (fotosGuia.length === 0) {
+        mostrarToastSimple('No hay fotos para eliminar', 'warning');
+        return;
+    }
+    
+    mostrarConfirmacion(
+        `¿Estás seguro de eliminar TODAS las ${fotosGuia.length} foto(s) de guía? Esta acción no se puede deshacer.`,
+        function() {
+            eliminarTodasLasFotosGuia();
+        }
+    );
+}
+
+function eliminarTodasLasFotosGuia(desmarcarCheckbox = false) {
+    // Mostrar toast temporal (se cierra automáticamente)
+    mostrarToastSimple('Eliminando todas las fotos de guía...', 'info');
+    
+    // Crear array de promesas para eliminar todas las fotos
+    const promesasEliminacion = fotosGuia.map(foto => {
+        return fetch(`/api/ordenes/${ordenId}/fotos-guia/${foto.id}`, {
+            method: 'DELETE'
+        }).then(response => response.json());
+    });
+    
+    // Esperar a que todas las fotos se eliminen
+    Promise.all(promesasEliminacion)
+        .then(resultados => {
+            const exitosas = resultados.filter(r => r.success).length;
+            const fallidas = resultados.length - exitosas;
+            
+            // Solo mostrar mensaje si hubo errores
+            if (fallidas > 0) {
+                mostrarNotificacion(`${exitosas} foto(s) eliminada(s), ${fallidas} fallaron`, 'warning');
+            }
+            
+            // Recargar galería
+            cargarFotosGuiaDesdeServidor();
+            
+            // Recargar orden para actualizar el campo tiene_foto_guia en BD
+            cargarOrden().then(() => {
+                // Solo si viene del toggle del checkbox, desmarcar y ocultar
+                if (desmarcarCheckbox) {
+                    $('#checkFotoGuia').prop('checked', false);
+                    $('#seccionFotosGuia').slideUp(300);
+                }
+            });
+            
+            // Limpiar cualquier backdrop que haya quedado
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                    backdrop.remove();
+                });
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 100);
+        })
+        .catch(error => {
+            console.error('❌ Error al eliminar fotos de guía:', error);
+            mostrarNotificacion('Error al eliminar las fotos', 'error');
+            
+            // Limpiar backdrop también en caso de error
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                    backdrop.remove();
+                });
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 100);
+        });
+}
+
+function eliminarFotoGuiaServidor(fotoId) {
+    mostrarConfirmacion(
+        '¿Eliminar esta foto de guía permanentemente?',
+        function() {
+            fetch(`/api/ordenes/${ordenId}/fotos-guia/${fotoId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarToastSimple('✅ Foto de guía eliminada', 'success');
+                    cargarFotosGuiaDesdeServidor();
+                    // Recargar orden para actualizar el campo tiene_foto_guia
+                    cargarOrden();
+                } else {
+                    mostrarToastSimple('❌ Error al eliminar foto', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error al eliminar foto:', error);
+                mostrarToastSimple('❌ Error al eliminar foto', 'error');
+            });
+        }
+    );
+}
+
+</script>
+{% endblock %}

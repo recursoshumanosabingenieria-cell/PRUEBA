@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Gestión de Extintores{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #dc3545;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            margin: 5px 10px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .brand-title {
+            color: white;
+            font-weight: 700;
+            font-size: 1.3em;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .brand-title i {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .content-wrapper {
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 2px solid #f0f0f0;
+            font-weight: 600;
+            padding: 15px 20px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .table {
+            background-color: white;
+        }
+        
+        .table thead th {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card i {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card h3 {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .stat-card p {
+            color: #6c757d;
+            margin: 0;
+            font-weight: 500;
+        }
+        
+        /* Estilos para feed de actividad */
+        #activityFeed {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            max-height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 10000;
+            display: none;
+            overflow: hidden;
+        }
+        
+        #activityFeed.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .activity-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .activity-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .activity-item {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .activity-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .activity-user {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .activity-action {
+            color: #495057;
+            font-size: 0.9em;
+        }
+        
+        .activity-time {
+            color: #6c757d;
+            font-size: 0.75em;
+        }
+        
+        .activity-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            z-index: 9999;
+            transition: all 0.3s;
+        }
+        
+        .activity-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .activity-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .users-online {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="brand-title">
+                    <i class="bi bi-fire"></i>
+                    Sistema de Extintores
+                </div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a class="nav-link {% if request.path == '/clientes' %}active{% endif %}" href="/clientes">
+                        <i class="bi bi-people"></i> Clientes
+                    </a>
+                    <a class="nav-link {% if request.path == '/extintores' %}active{% endif %}" href="/extintores">
+                        <i class="bi bi-fire-extinguisher"></i> Extintores
+                    </a>
+                    <a class="nav-link {% if request.path == '/catalogo' %}active{% endif %}" href="/catalogo">
+                        <i class="bi bi-book"></i> Catálogo
+                    </a>
+                    <a class="nav-link {% if '/ordenes' in request.path %}active{% endif %}" href="/ordenes">
+                        <i class="bi bi-clipboard-check"></i> Órdenes de Trabajo
+                    </a>
+                    <a class="nav-link {% if request.path == '/mantenimientos' %}active{% endif %}" href="/mantenimientos">
+                        <i class="bi bi-tools"></i> Mantenimientos
+                    </a>
+                    <a class="nav-link {% if request.path == '/reportes' %}active{% endif %}" href="/reportes">
+                        <i class="bi bi-file-earmark-bar-graph"></i> Reportes
+                    </a>
+                    {% if usuario.user_rol in ['PRINCIPAL', 'ADMINISTRATIVO'] %}
+                    <a class="nav-link {% if request.path == '/personal' %}active{% endif %}" href="/personal">
+                        <i class="bi bi-people-fill"></i> Personal
+                    </a>
+                    <a class="nav-link {% if request.path == '/logs' %}active{% endif %}" href="/logs">
+                        <i class="bi bi-terminal"></i> Logs del Sistema
+                    </a>
+                    {% endif %}
+                </nav>
+                
+                <!-- Info de Usuario -->
+                <div class="mt-auto p-3 border-top">
+                    <div class="text-white small">
+                        <div class="mb-2">
+                            <i class="bi bi-person-circle"></i> <strong>{{ usuario.user_nombre }}</strong>
+                        </div>
+                        <div class="mb-2">
+                            <span class="badge bg-info">{{ usuario.user_rol }}</span>
+                        </div>
+                        <a href="/logout" class="btn btn-sm btn-outline-light w-100">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10 content-wrapper">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botón flotante de actividad -->
+    <div class="activity-toggle" id="activityToggle" onclick="toggleActivityFeed()">
+        <i class="bi bi-bell-fill"></i>
+        <span class="activity-badge" id="activityBadge" style="display: none;">0</span>
+    </div>
+    
+    <!-- Feed de actividad en tiempo real -->
+    <div id="activityFeed">
+        <div class="activity-header">
+            <div>
+                <strong><i class="bi bi-activity"></i> Actividad en Vivo</strong>
+                <div class="users-online">
+                    <span class="online-indicator"></span>
+                    <span id="usersOnlineCount">0</span> usuarios conectados
+                </div>
+            </div>
+            <button class="btn btn-sm btn-light" onclick="toggleActivityFeed()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="activity-list" id="activityList">
+            <div class="text-center text-muted p-3">
+                <i class="bi bi-hourglass-split"></i><br>
+                Esperando actividad...
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- SINCRONIZACION GLOBAL EN TIEMPO REAL -->
+    <script>
+    (function() {
+        // Sistema de sincronizacion global
+        let globalSocket = null;
+        let isConnected = false;
+        let currentPage = window.location.pathname;
+        
+        function initGlobalSync() {
+            try {
+                globalSocket = io({
+                    transports: ['websocket', 'polling'],
+                    reconnection: true,
+                    reconnectionDelay: 1000,
+                    reconnectionAttempts: 10
+                });
+                
+                globalSocket.on('connect', function() {
+                    isConnected = true;
+                    console.log('[GLOBAL-SYNC] ✅ Sincronizacion global activada');
+                });
+                
+                globalSocket.on('disconnect', function() {
+                    isConnected = false;
+                    console.log('[GLOBAL-SYNC] ⚠️ Desconectado - Intentando reconectar...');
+                });
+                
+                // Escuchar TODOS los cambios de datos
+                globalSocket.on('data_changed', function(evento) {
+                    console.log('[GLOBAL-SYNC] 🔄 Cambio detectado:', evento.tipo, evento.entidad);
+                    handleDataChange(evento);
+                });
+                
+                globalSocket.on('connect_error', function(error) {
+                    console.error('[GLOBAL-SYNC] ❌ Error:', error);
+                });
+                
+            } catch (error) {
+                console.error('[GLOBAL-SYNC] ❌ Error al inicializar:', error);
+            }
+        }
+        
+        function handleDataChange(evento) {
+            const { tipo, entidad, datos } = evento;
+            
+            // Recargar segun la pagina actual y el tipo de cambio
+            if (currentPage === '/' || currentPage === '/index') {
+                // Dashboard - recargar todo
+                if (typeof cargarDashboard === 'function') cargarDashboard();
+                if (typeof cargarAlertas === 'function') cargarAlertas();
+            }
+            
+            if (currentPage === '/ordenes' || currentPage.includes('/ordenes')) {
+                // Pagina de ordenes
+                if (entidad === 'orden' && typeof cargarOrdenes === 'function') {
+                    cargarOrdenes();
+                }
+                if (entidad === 'orden' && typeof cargarOrden === 'function') {
+                    cargarOrden();
+                }
+            }
+            
+            if (currentPage === '/clientes') {
+                // Pagina de clientes
+                if (entidad === 'cliente' && typeof cargarClientes === 'function') {
+                    cargarClientes();
+                }
+            }
+            
+            if (currentPage === '/extintores') {
+                // Pagina de extintores
+                if (entidad === 'extintor' && typeof cargarExtintores === 'function') {
+                    cargarExtintores();
+                }
+            }
+            
+            if (currentPage === '/personal') {
+                // Pagina de personal
+                if (entidad === 'usuario' && typeof cargarPersonal === 'function') {
+                    cargarPersonal();
+                }
+            }
+            
+            if (currentPage === '/catalogo') {
+                // Pagina de catalogo
+                if (entidad === 'catalogo' && typeof cargarCatalogo === 'function') {
+                    cargarCatalogo();
+                }
+            }
+            
+            // Mostrar notificacion visual
+            mostrarNotificacionSync(evento);
+        }
+        
+        function mostrarNotificacionSync(evento) {
+            // Crear notificacion toast pequeña
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 start-0 p-3';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                <div class="toast show" role="alert">
+                    <div class="toast-header bg-info text-white">
+                        <i class="bi bi-arrow-repeat me-2"></i>
+                        <strong class="me-auto">Sincronizado</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${evento.mensaje || 'Datos actualizados'}
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        // Inicializar al cargar la pagina
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGlobalSync);
+        } else {
+            initGlobalSync();
+        }
+        
+        // Exponer socket global para uso en otras paginas
+        window.globalSocket = globalSocket;
+        window.isGlobalSyncConnected = function() { return isConnected; };
+    })();
+    
+    // ========== SISTEMA DE ACTIVIDAD EN TIEMPO REAL (TIPO RED SOCIAL) ==========
+    (function() {
+        let activityFeedVisible = false;
+        let activityCount = 0;
+        let activities = [];
+        const MAX_ACTIVITIES = 50;
+        
+        // Obtener info del usuario actual
+        const currentUser = {
+            nombre: '{{ usuario.user_nombre }}',
+            rol: '{{ usuario.user_rol }}'
+        };
+        
+        // Notificar al servidor que el usuario se conectó
+        if (window.globalSocket) {
+            window.globalSocket.on('connect', function() {
+                window.globalSocket.emit('usuario_conectado', currentUser);
+            });
+            
+            // Escuchar cuando otros usuarios se conectan
+            window.globalSocket.on('usuario_conectado', function(data) {
+                console.log('[ACTIVIDAD] 👤 Usuario conectado:', data.usuario);
+                document.getElementById('usersOnlineCount').textContent = data.usuarios_online || 0;
+                
+                if (data.usuario !== currentUser.nombre) {
+                    agregarActividad({
+                        usuario: data.usuario,
+                        accion: 'se conectó',
+                        icono: 'bi-person-check-fill',
+                        color: '#28a745'
+                    });
+                }
+            });
+            
+            // Escuchar cuando usuarios se desconectan
+            window.globalSocket.on('usuario_desconectado', function(data) {
+                console.log('[ACTIVIDAD] 🚪 Usuario desconectado:', data.usuario);
+                if (data.usuario !== currentUser.nombre) {
+                    agregarActividad({
+                        usuario: data.usuario,
+                        accion: 'se desconectó',
+                        icono: 'bi-person-x-fill',
+                        color: '#dc3545'
+                    });
+                }
+            });
+            
+            // Escuchar actividades de usuarios
+            window.globalSocket.on('nueva_actividad', function(data) {
+                console.log('[ACTIVIDAD] 🔔 Nueva actividad:', data);
+                agregarActividad(data);
+            });
+            
+            // Escuchar cambios de datos y convertirlos en actividades
+            window.globalSocket.on('data_changed', function(evento) {
+                const iconos = {
+                    'cliente': 'bi-people-fill',
+                    'orden': 'bi-clipboard-check-fill',
+                    'extintor': 'bi-fire-extinguisher',
+                    'usuario': 'bi-person-badge-fill'
+                };
+                
+                const acciones = {
+                    'creado': 'creó',
+                    'actualizado': 'actualizó',
+                    'eliminado': 'eliminó'
+                };
+                
+                agregarActividad({
+                    usuario: currentUser.nombre,
+                    accion: `${acciones[evento.tipo] || evento.tipo} ${evento.entidad}`,
+                    detalles: evento.mensaje,
+                    icono: iconos[evento.entidad] || 'bi-pencil-fill',
+                    color: evento.tipo === 'creado' ? '#28a745' : evento.tipo === 'eliminado' ? '#dc3545' : '#667eea'
+                });
+            });
+        }
+        
+        function agregarActividad(data) {
+            activities.unshift(data);
+            if (activities.length > MAX_ACTIVITIES) {
+                activities.pop();
+            }
+            
+            activityCount++;
+            actualizarBadge();
+            renderActivities();
+        }
+        
+        function renderActivities() {
+            const list = document.getElementById('activityList');
+            if (activities.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center text-muted p-3">
+                        <i class="bi bi-hourglass-split"></i><br>
+                        Esperando actividad...
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            activities.forEach((activity, index) => {
+                const time = activity.timestamp ? new Date(activity.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : 'Ahora';
+                const icon = activity.icono || 'bi-circle-fill';
+                const color = activity.color || '#667eea';
+                
+                html += `
+                    <div class="activity-item" style="animation-delay: ${index * 0.05}s">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi ${icon}" style="color: ${color}; font-size: 1.2em;"></i>
+                            <div class="flex-grow-1">
+                                <div class="activity-user">${activity.usuario}</div>
+                                <div class="activity-action">${activity.accion}</div>
+                                ${activity.detalles ? `<small class="text-muted">${activity.detalles}</small>` : ''}
+                                <div class="activity-time">${time}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+        }
+        
+        function actualizarBadge() {
+            const badge = document.getElementById('activityBadge');
+            if (activityCount > 0 && !activityFeedVisible) {
+                badge.style.display = 'flex';
+                badge.textContent = activityCount > 99 ? '99+' : activityCount;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        window.toggleActivityFeed = function() {
+            activityFeedVisible = !activityFeedVisible;
+            const feed = document.getElementById('activityFeed');
+            
+            if (activityFeedVisible) {
+                feed.classList.add('show');
+                activityCount = 0;
+                actualizarBadge();
+            } else {
+                feed.classList.remove('show');
+            }
+        };
+        
+        // Registrar actividades del usuario actual
+        window.registrarActividad = function(accion, detalles) {
+            if (window.globalSocket && window.globalSocket.connected) {
+                window.globalSocket.emit('actividad_usuario', {
+                    usuario: currentUser.nombre,
+                    accion: accion,
+                    pagina: window.location.pathname,
+                    detalles: detalles
+                });
+            }
+        };
+        
+        // Auto-registrar navegación
+        const paginas = {
+            '/': 'Dashboard',
+            '/clientes': 'Clientes',
+            '/extintores': 'Extintores',
+            '/ordenes': 'Órdenes',
+            '/catalogo': 'Catálogo',
+            '/personal': 'Personal'
+        };
+        
+        const paginaActual = paginas[window.location.pathname] || 'una página';
+        setTimeout(() => {
+            registrarActividad(`está viendo ${paginaActual}`, '');
+        }, 1000);
+        
+    })();
+    
+    // ========== SINCRONIZACIÓN DESACTIVADA PARA FORMULARIOS ==========
+    // Solo se sincronizan acciones CONFIRMADAS (guardar, crear, eliminar)
+    // NO se sincronizan estados temporales (escribir, seleccionar, borrar)
+    console.log('[SYNC] ℹ️ Sincronización de formularios desactivada - Solo acciones confirmadas');
+    </script>
+    
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

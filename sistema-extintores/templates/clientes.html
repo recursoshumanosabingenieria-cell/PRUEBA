@@ -1,0 +1,950 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - Sistema de Extintores{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-people"></i> Gestión de Clientes</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCliente">
+        <i class="bi bi-plus-circle"></i> Nuevo Cliente
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="mb-3">
+            <input type="text" id="buscar-cliente" class="form-control" placeholder="Buscar cliente...">
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>RUC</th>
+                        <th>Ubicación</th>
+                        <th>Estado</th>
+                        <th>Extintores</th>
+                        <th>Locales Anexos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-clientes"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Extintores del Cliente -->
+<div class="modal fade" id="modalExtintores" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalExtintoresTitulo">Extintores del Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Código</th>
+                                <th>Tipo</th>
+                                <th>Capacidad</th>
+                                <th>Ubicación</th>
+                                <th>Última Recarga</th>
+                                <th>Próximo Mant.</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-extintores-cliente"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Locales Anexos -->
+<div class="modal fade" id="modalLocalesAnexos" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAnexosTitulo">Locales Anexos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Dirección Completa</th>
+                                <th>Distrito</th>
+                                <th>Provincia</th>
+                                <th>Departamento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-anexos"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Consulta Masiva -->
+<div class="modal fade" id="modalConsultaMasiva" tabindex="-1" data-bs-backdrop="static" style="z-index: 1060;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+                    Consulta Masiva de RUCs
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Instrucciones:</strong> Pegue los RUCs en el cuadro de texto, uno por línea. 
+                    El sistema consultará automáticamente cada RUC en SUNAT y guardará los clientes.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Lista de RUCs (uno por línea):</strong></label>
+                    <textarea class="form-control" id="textarea-rucs-masivos" rows="12" 
+                              placeholder="20123456789&#10;20987654321&#10;20111222333&#10;..."></textarea>
+                    <small class="text-muted">Total de RUCs: <span id="total-rucs-count">0</span></small>
+                </div>
+                
+                <!-- Área de progreso -->
+                <div id="progreso-masivo" style="display: none;">
+                    <hr>
+                    <h6>Progreso de Consulta:</h6>
+                    <div class="progress mb-2" style="height: 25px;">
+                        <div id="barra-progreso" class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                             role="progressbar" style="width: 0%">0%</div>
+                    </div>
+                    <div id="estado-progreso" class="small text-muted">Preparando...</div>
+                    
+                    <!-- Log de resultados -->
+                    <div class="mt-3" style="max-height: 200px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
+                        <div id="log-resultados" class="small font-monospace"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btn-cancelar-masivo">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btn-iniciar-consulta-masiva">
+                    <i class="bi bi-play-circle me-1"></i>Iniciar Consulta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmación Eliminar -->
+<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">¿Está seguro de eliminar este cliente?</p>
+                <p class="text-muted mb-0"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">
+                    <i class="bi bi-trash me-1"></i>Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cliente -->
+<div class="modal fade" id="modalCliente" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalClienteTitulo">Nuevo Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <!-- Área de alertas -->
+                <div id="alert-container"></div>
+                
+                <form id="formCliente">
+                    <input type="hidden" id="cliente-id">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">RUC</label>
+                            <div class="d-flex gap-2">
+                                <input type="text" class="form-control" id="cliente-rfc" maxlength="11" placeholder="Ingrese RUC" style="max-width: 200px;">
+                                <button class="btn btn-outline-primary" type="button" id="btn-consultar-ruc" onclick="consultarRUC()">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="abrirConsultaMasiva()">
+                                    <i class="bi bi-file-earmark-spreadsheet"></i> Consulta Masiva
+                                </button>
+                            </div>
+                            <small class="text-muted">Ingrese el RUC y presione Buscar para autocompletar</small>
+                            <!-- Indicador de carga -->
+                            <div id="loading-indicator" class="mt-2" style="display: none;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <span class="ms-2 text-primary">Consultando RUC en SUNAT...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Nombre / Razón Social *</label>
+                            <input type="text" class="form-control" id="cliente-nombre" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Dirección Principal</label>
+                        <input type="text" class="form-control" id="cliente-direccion" readonly>
+                        <small class="text-muted">Se autocompleta con la consulta RUC</small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Distrito</label>
+                            <input type="text" class="form-control" id="cliente-distrito" readonly>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Provincia</label>
+                            <input type="text" class="form-control" id="cliente-provincia" readonly>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Departamento</label>
+                            <input type="text" class="form-control" id="cliente-departamento" readonly>
+                        </div>
+                    </div>
+                    
+                    <!-- Locales Anexos -->
+                    <div id="locales-anexos-container" style="display: none;">
+                        <hr>
+                        <div class="alert alert-info d-flex align-items-center" role="alert">
+                            <i class="bi bi-building me-2 fs-4"></i>
+                            <div>
+                                <strong>Locales Anexos Encontrados:</strong> <span class="badge bg-primary fs-6" id="total-anexos">0</span>
+                                <br>
+                                <small>Los locales anexos se guardarán automáticamente. Podrás verlos después en la lista de clientes.</small>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="position: sticky; bottom: 0; background-color: white; z-index: 1050; border-top: 2px solid #dee2e6;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-guardar-cliente" onclick="guardarCliente()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Version: 2025-10-20-15:10 - Modal de confirmación personalizado
+    let clientes = [];
+    
+    function cargarClientes() {
+        fetch('/api/clientes')
+            .then(response => response.json())
+            .then(data => {
+                clientes = data;
+                mostrarClientes(data);
+            });
+    }
+    
+    function mostrarClientes(data) {
+        const tabla = document.getElementById('tabla-clientes');
+        tabla.innerHTML = '';
+        
+        if (data.length === 0) {
+            tabla.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay clientes registrados</td></tr>';
+            return;
+        }
+        
+        data.forEach(cliente => {
+            const ubicacion = cliente.distrito && cliente.provincia 
+                ? `${cliente.distrito}, ${cliente.provincia}` 
+                : (cliente.direccion || '-');
+            
+            const estadoBadge = cliente.estado === 'ACTIVO' 
+                ? '<span class="badge bg-success">ACTIVO</span>' 
+                : '<span class="badge bg-secondary">INACTIVO</span>';
+            
+            const btnVerAnexos = cliente.total_locales_anexos > 0 
+                ? `<button class="btn btn-sm btn-outline-info me-1 btn-ver-anexos" data-cliente-id="${cliente.id}" data-cliente-nombre="${cliente.nombre}" data-cliente-rfc="${cliente.rfc}" title="Ver locales anexos">
+                       <i class="bi bi-building"></i> ${cliente.total_locales_anexos}
+                   </button>`
+                : '';
+            
+            const fila = `
+                <tr>
+                    <td><strong>${cliente.nombre}</strong></td>
+                    <td>${cliente.rfc || '-'}</td>
+                    <td><small>${ubicacion}</small></td>
+                    <td>${cliente.estado ? estadoBadge : '-'}</td>
+                    <td>
+                        ${cliente.total_extintores > 0 
+                            ? `<button class="btn btn-sm btn-info btn-ver-extintores" data-cliente-id="${cliente.id}" data-cliente-nombre="${cliente.nombre}" title="Ver extintores">
+                                   <i class="bi bi-fire"></i> ${cliente.total_extintores}
+                               </button>`
+                            : '<span class="badge bg-secondary">0</span>'}
+                    </td>
+                    <td>${btnVerAnexos}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary btn-editar" data-cliente-id="${cliente.id}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger btn-eliminar" data-cliente-id="${cliente.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tabla.innerHTML += fila;
+        });
+    }
+    
+    let datosRUC = null; // Variable global para almacenar datos de RUC
+    
+    function guardarCliente() {
+        console.log('=== INICIANDO GUARDADO DE CLIENTE ===');
+        
+        const btnGuardar = document.getElementById('btn-guardar-cliente');
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando...';
+        
+        const id = document.getElementById('cliente-id').value;
+        const datos = {
+            nombre: document.getElementById('cliente-nombre').value,
+            rfc: document.getElementById('cliente-rfc').value,
+            direccion: document.getElementById('cliente-direccion').value,
+            distrito: document.getElementById('cliente-distrito').value,
+            provincia: document.getElementById('cliente-provincia').value,
+            departamento: document.getElementById('cliente-departamento').value
+        };
+        
+        console.log('Datos básicos:', datos);
+        
+        // Agregar datos adicionales de SUNAT si existen
+        if (datosRUC) {
+            datos.ubigeo = datosRUC.ubigeo || '';
+            datos.estado = datosRUC.estado || '';
+            datos.condicion = datosRUC.condicion || '';
+            datos.es_agente_retencion = datosRUC.es_agente_retencion || false;
+            datos.es_buen_contribuyente = datosRUC.es_buen_contribuyente || false;
+            datos.locales_anexos = datosRUC.locales_anexos || [];
+            console.log('Datos de RUC agregados:', {
+                locales_anexos: datos.locales_anexos.length,
+                estado: datos.estado,
+                condicion: datos.condicion
+            });
+        }
+        
+        if (!datos.nombre) {
+            mostrarAlerta('warning', 'Campo requerido', 'El nombre es obligatorio');
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = 'Guardar';
+            return;
+        }
+        
+        const url = id ? `/api/clientes/${id}` : '/api/clientes';
+        const method = id ? 'PUT' : 'POST';
+        
+        console.log('Enviando petición:', method, url);
+        console.log('Datos completos a enviar:', JSON.stringify(datos, null, 2));
+        
+        fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(datos)
+        })
+        .then(response => {
+            console.log('Respuesta recibida - Status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos de respuesta:', data);
+            if (data.success) {
+                console.log('✅ Cliente guardado exitosamente - ID:', data.id);
+                
+                // Cerrar modal
+                const modalElement = document.getElementById('modalCliente');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                } else {
+                    // Si no hay instancia, crear una y cerrarla
+                    const newModal = new bootstrap.Modal(modalElement);
+                    newModal.hide();
+                }
+                
+                // Esperar a que el modal se cierre antes de mostrar la alerta
+                setTimeout(() => {
+                    cargarClientes();
+                    limpiarFormulario();
+                    
+                    // Mostrar alerta en el body principal, no en el modal
+                    const mainAlert = document.createElement('div');
+                    mainAlert.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                    mainAlert.style.zIndex = '9999';
+                    mainAlert.innerHTML = `
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <strong>¡Éxito!</strong> Cliente guardado correctamente
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.body.appendChild(mainAlert);
+                    
+                    // Remover alerta después de 5 segundos
+                    setTimeout(() => mainAlert.remove(), 5000);
+                }, 300);
+            } else {
+                console.error('❌ Error en respuesta:', data);
+                mostrarAlerta('danger', 'Error', data.message || 'No se pudo guardar el cliente');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error al guardar cliente:', error);
+            mostrarAlerta('danger', 'Error', 'Ocurrió un error al guardar el cliente: ' + error.message);
+        })
+        .finally(() => {
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = 'Guardar';
+            console.log('=== GUARDADO FINALIZADO ===');
+        });
+    }
+    
+    function editarCliente(id) {
+        fetch(`/api/clientes/${id}`)
+            .then(response => response.json())
+            .then(cliente => {
+                document.getElementById('cliente-id').value = cliente.id;
+                document.getElementById('cliente-nombre').value = cliente.nombre;
+                document.getElementById('cliente-rfc').value = cliente.rfc || '';
+                document.getElementById('cliente-direccion').value = cliente.direccion || '';
+                document.getElementById('cliente-distrito').value = cliente.distrito || '';
+                document.getElementById('cliente-provincia').value = cliente.provincia || '';
+                document.getElementById('cliente-departamento').value = cliente.departamento || '';
+                
+                // Guardar datos completos en variable global
+                datosRUC = {
+                    nombre: cliente.nombre,
+                    rfc: cliente.rfc,
+                    direccion: cliente.direccion,
+                    ubigeo: cliente.ubigeo,
+                    distrito: cliente.distrito,
+                    provincia: cliente.provincia,
+                    departamento: cliente.departamento,
+                    estado: cliente.estado,
+                    condicion: cliente.condicion,
+                    es_agente_retencion: cliente.es_agente_retencion,
+                    es_buen_contribuyente: cliente.es_buen_contribuyente,
+                    locales_anexos: cliente.locales_anexos || []
+                };
+                
+                // Mostrar locales anexos si existen
+                if (cliente.locales_anexos && cliente.locales_anexos.length > 0) {
+                    mostrarLocalesAnexos(cliente.locales_anexos);
+                }
+                
+                document.getElementById('modalClienteTitulo').textContent = 'Editar Cliente';
+                new bootstrap.Modal(document.getElementById('modalCliente')).show();
+            });
+    }
+    
+    function verExtintoresCliente(id, nombre) {
+        fetch(`/api/extintores?cliente_id=${id}`)
+            .then(response => response.json())
+            .then(extintores => {
+                const titulo = document.getElementById('modalExtintoresTitulo');
+                titulo.innerHTML = `Extintores de <strong>${nombre}</strong>`;
+                
+                const tabla = document.getElementById('tabla-extintores-cliente');
+                tabla.innerHTML = '';
+                
+                if (extintores && extintores.length > 0) {
+                    extintores.forEach((ext, index) => {
+                        let estadoBadge = '';
+                        if (ext.estado === 'Pendiente') estadoBadge = '<span class="badge bg-warning">Pendiente</span>';
+                        else if (ext.estado === 'Operativo') estadoBadge = '<span class="badge bg-success">Operativo</span>';
+                        else if (ext.estado === 'Mantenimiento') estadoBadge = '<span class="badge bg-danger">Mantenimiento</span>';
+                        else if (ext.estado === 'Baja') estadoBadge = '<span class="badge bg-dark">Baja</span>';
+                        
+                        const fila = `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><strong>${ext.codigo || '<em class="text-muted">Sin código</em>'}</strong></td>
+                                <td>${ext.tipo || '-'}</td>
+                                <td>${ext.capacidad || '-'}</td>
+                                <td>${ext.ubicacion || '-'}</td>
+                                <td>${ext.fecha_ultima_recarga || '-'}</td>
+                                <td>${ext.fecha_proximo_mantenimiento || '-'}</td>
+                                <td>${estadoBadge}</td>
+                            </tr>
+                        `;
+                        tabla.innerHTML += fila;
+                    });
+                } else {
+                    tabla.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No hay extintores registrados para este cliente</td></tr>';
+                }
+                
+                new bootstrap.Modal(document.getElementById('modalExtintores')).show();
+            });
+    }
+    
+    function verLocalesAnexos(id, nombre, ruc) {
+        fetch(`/api/clientes/${id}`)
+            .then(response => response.json())
+            .then(cliente => {
+                const titulo = document.getElementById('modalAnexosTitulo');
+                titulo.innerHTML = `Locales Anexos de <strong>${nombre}</strong> - RUC: ${ruc}`;
+                
+                const tabla = document.getElementById('tabla-anexos');
+                tabla.innerHTML = '';
+                
+                if (cliente.locales_anexos && cliente.locales_anexos.length > 0) {
+                    cliente.locales_anexos.forEach((local, index) => {
+                        const fila = `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><strong>${local.direccion}</strong></td>
+                                <td>${local.distrito || '-'}</td>
+                                <td>${local.provincia || '-'}</td>
+                                <td>${local.departamento || '-'}</td>
+                            </tr>
+                        `;
+                        tabla.innerHTML += fila;
+                    });
+                } else {
+                    tabla.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay locales anexos registrados</td></tr>';
+                }
+                
+                new bootstrap.Modal(document.getElementById('modalLocalesAnexos')).show();
+            });
+    }
+    
+    let clienteIdAEliminar = null; // Variable global para almacenar el ID del cliente a eliminar
+    
+    function eliminarCliente(id) {
+        console.log('Abriendo modal de confirmación para cliente ID:', id);
+        clienteIdAEliminar = id;
+        
+        // Mostrar modal de confirmación
+        const modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
+        modal.show();
+    }
+    
+    // Event listener para el botón de confirmar eliminación
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+            if (clienteIdAEliminar === null) return;
+            
+            console.log('=== ELIMINANDO CLIENTE ===');
+            console.log('ID del cliente:', clienteIdAEliminar);
+            
+            // Cerrar modal de confirmación
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminar'));
+            modal.hide();
+            
+            fetch(`/api/clientes/${clienteIdAEliminar}`, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => {
+                console.log('Respuesta recibida - Status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos de respuesta:', data);
+                if (data.success) {
+                    console.log('✅ Cliente eliminado exitosamente');
+                    
+                    // Recargar lista de clientes
+                    cargarClientes();
+                    
+                    // Mostrar alerta en el body principal
+                    const mainAlert = document.createElement('div');
+                    mainAlert.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                    mainAlert.style.zIndex = '9999';
+                    mainAlert.innerHTML = `
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <strong>¡Eliminado!</strong> Cliente eliminado correctamente
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.body.appendChild(mainAlert);
+                    
+                    // Remover alerta después de 5 segundos
+                    setTimeout(() => mainAlert.remove(), 5000);
+                } else {
+                    console.error('❌ Error en respuesta:', data);
+                    mostrarAlerta('danger', 'Error', 'No se pudo eliminar el cliente');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error al eliminar cliente:', error);
+                
+                // Mostrar alerta de error en el body principal
+                const errorAlert = document.createElement('div');
+                errorAlert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                errorAlert.style.zIndex = '9999';
+                errorAlert.innerHTML = `
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Error</strong> Ocurrió un error al eliminar el cliente: ${error.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(errorAlert);
+                
+                setTimeout(() => errorAlert.remove(), 5000);
+            })
+            .finally(() => {
+                clienteIdAEliminar = null;
+                console.log('=== ELIMINACIÓN FINALIZADA ===');
+            });
+        });
+    });
+    
+    function limpiarFormulario() {
+        document.getElementById('formCliente').reset();
+        document.getElementById('cliente-id').value = '';
+        document.getElementById('modalClienteTitulo').textContent = 'Nuevo Cliente';
+        document.getElementById('locales-anexos-container').style.display = 'none';
+        datosRUC = null;
+    }
+    
+    function mostrarLocalesAnexos(locales) {
+        const container = document.getElementById('locales-anexos-container');
+        const totalBadge = document.getElementById('total-anexos');
+        
+        totalBadge.textContent = locales.length;
+        container.style.display = 'block';
+    }
+    
+    function mostrarAlerta(tipo, titulo, mensaje) {
+        const alertContainer = document.getElementById('alert-container');
+        const alertDiv = document.createElement('div');
+        
+        const iconos = {
+            'success': 'check-circle-fill',
+            'danger': 'exclamation-triangle-fill',
+            'warning': 'exclamation-circle-fill',
+            'info': 'info-circle-fill'
+        };
+        
+        alertDiv.className = `alert alert-${tipo} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            <i class="bi bi-${iconos[tipo]} me-2"></i>
+            <strong>${titulo}</strong> ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        alertContainer.innerHTML = '';
+        alertContainer.appendChild(alertDiv);
+        
+        // Remover alerta después de 8 segundos
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 8000);
+    }
+    
+    function consultarRUC() {
+        const ruc = document.getElementById('cliente-rfc').value.trim();
+        
+        console.log('Consultando RUC:', ruc);
+        
+        // Limpiar alertas previas
+        document.getElementById('alert-container').innerHTML = '';
+        
+        // Validar que el RUC tenga 11 dígitos
+        if (!ruc || ruc.length !== 11 || !/^\d+$/.test(ruc)) {
+            mostrarAlerta('warning', '⚠️ RUC Inválido', 'Por favor ingrese un RUC válido de 11 dígitos numéricos.');
+            return;
+        }
+        
+        const btnConsultar = document.getElementById('btn-consultar-ruc');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        
+        // Mostrar estado de carga
+        btnConsultar.disabled = true;
+        btnConsultar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Buscando...';
+        loadingIndicator.style.display = 'block';
+        
+        console.log('Enviando petición a:', `/api/consultar-ruc/${ruc}`);
+        
+        fetch(`/api/consultar-ruc/${ruc}`)
+            .then(response => {
+                console.log('Respuesta recibida:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos recibidos:', data);
+                
+                if (data.success) {
+                    // Guardar datos completos en variable global
+                    datosRUC = data.data;
+                    
+                    // Autocompletar campos
+                    document.getElementById('cliente-nombre').value = data.data.nombre;
+                    document.getElementById('cliente-direccion').value = data.data.direccion;
+                    document.getElementById('cliente-distrito').value = data.data.distrito || '';
+                    document.getElementById('cliente-provincia').value = data.data.provincia || '';
+                    document.getElementById('cliente-departamento').value = data.data.departamento || '';
+                    
+                    // Mostrar locales anexos si existen
+                    if (data.data.locales_anexos && data.data.locales_anexos.length > 0) {
+                        mostrarLocalesAnexos(data.data.locales_anexos);
+                    }
+                    
+                    // Mostrar mensaje de éxito
+                    const totalAnexos = data.data.locales_anexos ? data.data.locales_anexos.length : 0;
+                    
+                    mostrarAlerta('success', '✅ ¡Datos Encontrados!', 
+                        `Se encontró la empresa: <strong>${data.data.nombre}</strong>.<br>
+                         Estado: <strong>${data.data.estado}</strong> | Condición: <strong>${data.data.condicion}</strong><br>
+                         Locales anexos: <strong>${totalAnexos}</strong>`);
+                    
+                    // Resaltar campos autocompletados
+                    ['cliente-nombre', 'cliente-direccion', 'cliente-distrito', 'cliente-provincia', 'cliente-departamento'].forEach(id => {
+                        const campo = document.getElementById(id);
+                        if (campo.value) {
+                            campo.style.backgroundColor = '#d4edda';
+                            setTimeout(() => campo.style.backgroundColor = '', 2000);
+                        }
+                    });
+                } else {
+                    mostrarAlerta('danger', '❌ RUC No Encontrado', 
+                        data.message || 'No se encontraron datos para este RUC en SUNAT. Puede ingresar los datos manualmente.');
+                }
+            })
+            .catch(error => {
+                console.error('Error completo:', error);
+                mostrarAlerta('danger', '❌ Error de Conexión', 
+                    'No se pudo consultar el RUC. Verifique su conexión a internet o ingrese los datos manualmente.');
+            })
+            .finally(() => {
+                // Restaurar botón
+                btnConsultar.disabled = false;
+                btnConsultar.innerHTML = '<i class="bi bi-search"></i> Buscar';
+                loadingIndicator.style.display = 'none';
+                console.log('Consulta finalizada');
+            });
+    }
+    
+    // Permitir buscar con Enter en el campo RUC
+    document.getElementById('cliente-rfc').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            consultarRUC();
+        }
+    });
+    
+    // Búsqueda
+    document.getElementById('buscar-cliente').addEventListener('input', function(e) {
+        const busqueda = e.target.value.toLowerCase();
+        const filtrados = clientes.filter(c => 
+            c.nombre.toLowerCase().includes(busqueda) ||
+            (c.rfc && c.rfc.toLowerCase().includes(busqueda)) ||
+            (c.telefono && c.telefono.includes(busqueda))
+        );
+        mostrarClientes(filtrados);
+    });
+    
+    // Limpiar formulario al cerrar modal
+    document.getElementById('modalCliente').addEventListener('hidden.bs.modal', limpiarFormulario);
+    
+    // Event delegation para botones dinámicos
+    document.getElementById('tabla-clientes').addEventListener('click', function(e) {
+        const btnEditar = e.target.closest('.btn-editar');
+        const btnEliminar = e.target.closest('.btn-eliminar');
+        const btnVerAnexos = e.target.closest('.btn-ver-anexos');
+        const btnVerExtintores = e.target.closest('.btn-ver-extintores');
+        
+        if (btnEditar) {
+            const clienteId = parseInt(btnEditar.dataset.clienteId);
+            console.log('Botón editar clickeado - ID:', clienteId);
+            editarCliente(clienteId);
+        } else if (btnEliminar) {
+            const clienteId = parseInt(btnEliminar.dataset.clienteId);
+            console.log('Botón eliminar clickeado - ID:', clienteId);
+            eliminarCliente(clienteId);
+        } else if (btnVerAnexos) {
+            const clienteId = parseInt(btnVerAnexos.dataset.clienteId);
+            const clienteNombre = btnVerAnexos.dataset.clienteNombre;
+            const clienteRfc = btnVerAnexos.dataset.clienteRfc;
+            console.log('Botón ver anexos clickeado - ID:', clienteId);
+            verLocalesAnexos(clienteId, clienteNombre, clienteRfc);
+        } else if (btnVerExtintores) {
+            const clienteId = parseInt(btnVerExtintores.dataset.clienteId);
+            const clienteNombre = btnVerExtintores.dataset.clienteNombre;
+            console.log('Botón ver extintores clickeado - ID:', clienteId);
+            verExtintoresCliente(clienteId, clienteNombre);
+        }
+    });
+    
+    cargarClientes();
+    
+    // ============================================
+    // CONSULTA MASIVA DE RUCs
+    // ============================================
+    
+    // Función para abrir consulta masiva sin cerrar el modal de cliente
+    function abrirConsultaMasiva() {
+        const modalConsultaMasiva = new bootstrap.Modal(document.getElementById('modalConsultaMasiva'));
+        modalConsultaMasiva.show();
+    }
+    
+    // Contador de RUCs en tiempo real
+    document.getElementById('textarea-rucs-masivos').addEventListener('input', function(e) {
+        const texto = e.target.value.trim();
+        const rucs = texto.split('\n').filter(ruc => ruc.trim().length > 0);
+        document.getElementById('total-rucs-count').textContent = rucs.length;
+    });
+    
+    // Limpiar al cerrar modal
+    document.getElementById('modalConsultaMasiva').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('textarea-rucs-masivos').value = '';
+        document.getElementById('total-rucs-count').textContent = '0';
+        document.getElementById('progreso-masivo').style.display = 'none';
+        document.getElementById('log-resultados').innerHTML = '';
+        document.getElementById('btn-iniciar-consulta-masiva').disabled = false;
+        document.getElementById('btn-iniciar-consulta-masiva').innerHTML = '<i class="bi bi-play-circle me-1"></i>Iniciar Consulta';
+    });
+    
+    // Iniciar consulta masiva
+    document.getElementById('btn-iniciar-consulta-masiva').addEventListener('click', async function() {
+        const textarea = document.getElementById('textarea-rucs-masivos');
+        const texto = textarea.value.trim();
+        
+        if (!texto) {
+            alert('Por favor, ingrese al menos un RUC');
+            return;
+        }
+        
+        // Extraer RUCs (uno por línea)
+        const rucs = texto.split('\n')
+            .map(ruc => ruc.trim())
+            .filter(ruc => ruc.length > 0)
+            .filter(ruc => /^\d{11}$/.test(ruc)); // Solo RUCs válidos de 11 dígitos
+        
+        if (rucs.length === 0) {
+            alert('No se encontraron RUCs válidos. Asegúrese de que cada RUC tenga 11 dígitos.');
+            return;
+        }
+        
+        console.log('=== INICIANDO CONSULTA MASIVA ===');
+        console.log('Total de RUCs a procesar:', rucs.length);
+        console.log('RUCs:', rucs);
+        
+        // Deshabilitar botón y mostrar progreso
+        const btnIniciar = document.getElementById('btn-iniciar-consulta-masiva');
+        btnIniciar.disabled = true;
+        btnIniciar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
+        
+        document.getElementById('progreso-masivo').style.display = 'block';
+        document.getElementById('btn-cancelar-masivo').disabled = true;
+        textarea.disabled = true;
+        
+        const barraProgreso = document.getElementById('barra-progreso');
+        const estadoProgreso = document.getElementById('estado-progreso');
+        const logResultados = document.getElementById('log-resultados');
+        
+        // Mostrar estado inicial
+        barraProgreso.style.width = '10%';
+        barraProgreso.textContent = '10%';
+        estadoProgreso.textContent = `Enviando ${rucs.length} RUCs al servidor...`;
+        
+        try {
+            // Enviar todos los RUCs en una sola petición
+            const response = await fetch('/api/consultar-rucs-masivo', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ rucs: rucs })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            console.log('Respuesta del servidor:', data);
+            
+            // Actualizar progreso
+            barraProgreso.style.width = '100%';
+            barraProgreso.textContent = '100%';
+            barraProgreso.classList.remove('progress-bar-animated');
+            
+            // Mostrar resultados
+            if (data.resultados && data.resultados.length > 0) {
+                data.resultados.forEach(resultado => {
+                    if (resultado.status === 'exitoso') {
+                        logResultados.innerHTML += `<div class="text-success">✅ ${resultado.ruc} - ${resultado.nombre} (${resultado.locales} locales)</div>`;
+                    } else if (resultado.status === 'duplicado') {
+                        logResultados.innerHTML += `<div class="text-warning">⚠️ ${resultado.ruc} - ${resultado.message}</div>`;
+                    } else {
+                        logResultados.innerHTML += `<div class="text-danger">❌ ${resultado.ruc} - ${resultado.message}</div>`;
+                    }
+                });
+            }
+            
+            // Mostrar resumen
+            estadoProgreso.innerHTML = `
+                <strong>✅ Proceso Completado</strong><br>
+                Exitosos: <span class="text-success">${data.exitosos}</span> | 
+                Duplicados: <span class="text-warning">${data.duplicados}</span> | 
+                Errores: <span class="text-danger">${data.errores}</span>
+            `;
+            
+            btnIniciar.innerHTML = '<i class="bi bi-check-circle me-1"></i>Completado';
+            
+            // Recargar lista de clientes
+            cargarClientes();
+            
+            console.log('=== CONSULTA MASIVA FINALIZADA ===');
+            console.log('Exitosos:', data.exitosos, 'Duplicados:', data.duplicados, 'Errores:', data.errores);
+            
+        } catch (error) {
+            console.error('❌ Error en consulta masiva:', error);
+            estadoProgreso.innerHTML = `<strong class="text-danger">❌ Error: ${error.message}</strong>`;
+            logResultados.innerHTML += `<div class="text-danger">❌ Error al procesar la consulta masiva: ${error.message}</div>`;
+            btnIniciar.innerHTML = '<i class="bi bi-x-circle me-1"></i>Error';
+        } finally {
+            document.getElementById('btn-cancelar-masivo').disabled = false;
+            document.getElementById('btn-cancelar-masivo').textContent = 'Cerrar';
+            textarea.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

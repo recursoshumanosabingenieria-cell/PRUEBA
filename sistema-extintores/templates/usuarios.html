@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios - Sistema de Extintores{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-people"></i> Gestión de Usuarios</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalUsuario">
+        <i class="bi bi-plus-circle"></i> Nuevo Usuario
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Último Acceso</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-usuarios"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar Usuario -->
+<div class="modal fade" id="modalUsuario" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalUsuarioTitulo">Nuevo Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formUsuario">
+                    <input type="hidden" id="usuarioId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nombre Completo *</label>
+                        <input type="text" class="form-control" id="nombreCompleto" required>
+                        <small class="text-muted">El usuario se generará automáticamente</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Rol *</label>
+                        <select class="form-select" id="rol" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="PRINCIPAL">Principal (Acceso Total)</option>
+                            <option value="ADMINISTRATIVO">Administrativo (Acceso Casi Total)</option>
+                            <option value="TECNICO">Técnico (Acceso Limitado)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Estado</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="activo" checked>
+                            <label class="form-check-label" for="activo">Usuario Activo</label>
+                        </div>
+                    </div>
+                    
+                    <div id="credencialesGeneradas" class="alert alert-success" style="display: none;">
+                        <h6><i class="bi bi-check-circle"></i> Credenciales Generadas:</h6>
+                        <div class="mb-2">
+                            <strong>Usuario:</strong> <span id="usernameGenerado"></span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copiarTexto('usernameGenerado')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <div>
+                            <strong>Contraseña:</strong> <span id="passwordGenerado"></span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copiarTexto('passwordGenerado')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <small class="text-danger"><i class="bi bi-exclamation-triangle"></i> Guarda estas credenciales, no se mostrarán nuevamente</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cambiar Contraseña -->
+<div class="modal fade" id="modalCambiarPassword" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cambiar Contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="passwordUsuarioId">
+                <p>Usuario: <strong id="passwordUsername"></strong></p>
+                <div class="mb-3">
+                    <label class="form-label">Nueva Contraseña</label>
+                    <input type="text" class="form-control" id="nuevaPassword">
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="generarPasswordAleatoria()">
+                        <i class="bi bi-shuffle"></i> Generar Contraseña Aleatoria
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="cambiarPassword()">Cambiar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let usuarios = [];
+
+function cargarUsuarios() {
+    fetch('/api/usuarios')
+        .then(response => response.json())
+        .then(data => {
+            usuarios = data;
+            mostrarUsuarios(data);
+        });
+}
+
+function mostrarUsuarios(data) {
+    const tabla = document.getElementById('tabla-usuarios');
+    tabla.innerHTML = '';
+    
+    if (data.length === 0) {
+        tabla.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay usuarios registrados</td></tr>';
+        return;
+    }
+    
+    data.forEach(usuario => {
+        const estadoBadge = usuario.activo 
+            ? '<span class="badge bg-success">Activo</span>' 
+            : '<span class="badge bg-secondary">Inactivo</span>';
+        
+        let rolBadge = '';
+        if (usuario.rol === 'PRINCIPAL') rolBadge = '<span class="badge bg-danger">Principal</span>';
+        else if (usuario.rol === 'ADMINISTRATIVO') rolBadge = '<span class="badge bg-info">Administrativo</span>';
+        else if (usuario.rol === 'TECNICO') rolBadge = '<span class="badge bg-warning">Técnico</span>';
+        
+        const fila = `
+            <tr>
+                <td><strong>${usuario.username}</strong></td>
+                <td>${usuario.nombre_completo}</td>
+                <td>${usuario.email || '-'}</td>
+                <td>${rolBadge}</td>
+                <td>${estadoBadge}</td>
+                <td><small>${usuario.ultimo_acceso || 'Nunca'}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editarUsuario(${usuario.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="abrirCambiarPassword(${usuario.id}, '${usuario.username}')">
+                        <i class="bi bi-key"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarUsuario(${usuario.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        tabla.innerHTML += fila;
+    });
+}
+
+function generarUsername(nombreCompleto) {
+    // Tomar primer nombre y primer apellido
+    const partes = nombreCompleto.trim().toLowerCase().split(' ');
+    if (partes.length >= 2) {
+        return partes[0] + '.' + partes[1];
+    }
+    return partes[0];
+}
+
+function generarPasswordFacil() {
+    // Generar contraseña fácil: Palabra + Número
+    const palabras = ['Sol', 'Luna', 'Mar', 'Rio', 'Flor', 'Luz', 'Paz', 'Vida', 'Amor', 'Cielo'];
+    const palabra = palabras[Math.floor(Math.random() * palabras.length)];
+    const numero = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+    return palabra + numero;
+}
+
+function guardarUsuario() {
+    const id = document.getElementById('usuarioId').value;
+    const nombreCompleto = document.getElementById('nombreCompleto').value;
+    const email = document.getElementById('email').value;
+    const rol = document.getElementById('rol').value;
+    const activo = document.getElementById('activo').checked;
+    
+    if (!nombreCompleto || !rol) {
+        alert('Por favor completa los campos obligatorios');
+        return;
+    }
+    
+    const data = {
+        nombre_completo: nombreCompleto,
+        email: email,
+        rol: rol,
+        activo: activo
+    };
+    
+    // Si es nuevo usuario, generar credenciales
+    if (!id) {
+        data.username = generarUsername(nombreCompleto);
+        data.password = generarPasswordFacil();
+    }
+    
+    const url = id ? `/api/usuarios/${id}` : '/api/usuarios';
+    const method = id ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            if (!id) {
+                // Mostrar credenciales generadas
+                document.getElementById('usernameGenerado').textContent = data.username;
+                document.getElementById('passwordGenerado').textContent = data.password;
+                document.getElementById('credencialesGeneradas').style.display = 'block';
+                
+                // Deshabilitar el formulario
+                document.getElementById('formUsuario').querySelectorAll('input, select').forEach(el => el.disabled = true);
+                
+                alert('Usuario creado exitosamente. Guarda las credenciales mostradas.');
+            } else {
+                alert('Usuario actualizado exitosamente');
+                bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
+            }
+            cargarUsuarios();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    });
+}
+
+function editarUsuario(id) {
+    const usuario = usuarios.find(u => u.id === id);
+    if (!usuario) return;
+    
+    document.getElementById('modalUsuarioTitulo').textContent = 'Editar Usuario';
+    document.getElementById('usuarioId').value = usuario.id;
+    document.getElementById('nombreCompleto').value = usuario.nombre_completo;
+    document.getElementById('email').value = usuario.email || '';
+    document.getElementById('rol').value = usuario.rol;
+    document.getElementById('activo').checked = usuario.activo;
+    
+    new bootstrap.Modal(document.getElementById('modalUsuario')).show();
+}
+
+function eliminarUsuario(id) {
+    if (!confirm('¿Eliminar este usuario?')) return;
+    
+    fetch(`/api/usuarios/${id}`, {method: 'DELETE'})
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert('Usuario eliminado');
+                cargarUsuarios();
+            }
+        });
+}
+
+function abrirCambiarPassword(id, username) {
+    document.getElementById('passwordUsuarioId').value = id;
+    document.getElementById('passwordUsername').textContent = username;
+    document.getElementById('nuevaPassword').value = '';
+    new bootstrap.Modal(document.getElementById('modalCambiarPassword')).show();
+}
+
+function generarPasswordAleatoria() {
+    document.getElementById('nuevaPassword').value = generarPasswordFacil();
+}
+
+function cambiarPassword() {
+    const id = document.getElementById('passwordUsuarioId').value;
+    const password = document.getElementById('nuevaPassword').value;
+    
+    if (!password) {
+        alert('Ingresa una contraseña');
+        return;
+    }
+    
+    fetch(`/api/usuarios/${id}/cambiar-password`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password: password})
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('Contraseña cambiada exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('modalCambiarPassword')).hide();
+        }
+    });
+}
+
+function copiarTexto(elementId) {
+    const texto = document.getElementById(elementId).textContent;
+    navigator.clipboard.writeText(texto);
+    alert('Copiado al portapapeles');
+}
+
+// Limpiar formulario al cerrar modal
+document.getElementById('modalUsuario').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('formUsuario').reset();
+    document.getElementById('usuarioId').value = '';
+    document.getElementById('credencialesGeneradas').style.display = 'none';
+    document.getElementById('formUsuario').querySelectorAll('input, select').forEach(el => el.disabled = false);
+    document.getElementById('modalUsuarioTitulo').textContent = 'Nuevo Usuario';
+});
+
+cargarUsuarios();
+</script>
+{% endblock %}

@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - Sistema de Extintores{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-file-earmark-bar-graph"></i> Reportes y Estadísticas</h1>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-calendar-range"></i> Filtros de Reporte
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Reporte</label>
+                    <select class="form-select" id="tipo-reporte">
+                        <option value="servicios">Servicios Realizados</option>
+                        <option value="vencimientos">Próximos Vencimientos</option>
+                        <option value="ingresos">Ingresos por Período</option>
+                        <option value="clientes">Resumen por Cliente</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="fecha-inicio">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha Fin</label>
+                        <input type="date" class="form-control" id="fecha-fin">
+                    </div>
+                </div>
+                <button class="btn btn-primary w-100" onclick="generarReporte()">
+                    <i class="bi bi-search"></i> Generar Reporte
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up"></i> Resumen Rápido
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Total de Servicios Este Mes</h6>
+                    <h3 class="text-primary" id="resumen-servicios">0</h3>
+                </div>
+                <div class="mb-3">
+                    <h6>Ingresos Este Mes</h6>
+                    <h3 class="text-success" id="resumen-ingresos">$0.00</h3>
+                </div>
+                <div class="mb-3">
+                    <h6>Extintores Próximos a Vencer (30 días)</h6>
+                    <h3 class="text-warning" id="resumen-proximos">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-table"></i> Resultados del Reporte</span>
+        <button class="btn btn-sm btn-success" onclick="exportarExcel()">
+            <i class="bi bi-file-excel"></i> Exportar
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="resultado-reporte">
+            <p class="text-muted text-center">Seleccione los filtros y genere un reporte</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Establecer fechas por defecto (mes actual)
+    const hoy = new Date();
+    const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    document.getElementById('fecha-inicio').value = primerDia.toISOString().split('T')[0];
+    document.getElementById('fecha-fin').value = hoy.toISOString().split('T')[0];
+    
+    function cargarResumen() {
+        fetch('/api/dashboard')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('resumen-servicios').textContent = data.mantenimientos_mes;
+                document.getElementById('resumen-ingresos').textContent = '$' + data.ingresos_mes.toLocaleString('es-MX', {minimumFractionDigits: 2});
+                document.getElementById('resumen-proximos').textContent = data.extintores_proximos;
+            });
+    }
+    
+    function generarReporte() {
+        const tipo = document.getElementById('tipo-reporte').value;
+        const fechaInicio = document.getElementById('fecha-inicio').value;
+        const fechaFin = document.getElementById('fecha-fin').value;
+        
+        if (tipo === 'servicios') {
+            generarReporteServicios(fechaInicio, fechaFin);
+        } else if (tipo === 'vencimientos') {
+            generarReporteVencimientos();
+        } else if (tipo === 'ingresos') {
+            generarReporteIngresos(fechaInicio, fechaFin);
+        } else if (tipo === 'clientes') {
+            generarReporteClientes();
+        }
+    }
+    
+    function generarReporteServicios(inicio, fin) {
+        fetch('/api/mantenimientos')
+            .then(response => response.json())
+            .then(data => {
+                const filtrados = data.filter(m => {
+                    const fecha = m.fecha_servicio.split(' ')[0];
+                    return fecha >= inicio && fecha <= fin;
+                });
+                
+                let html = `
+                    <h5>Servicios Realizados del ${inicio} al ${fin}</h5>
+                    <p>Total de servicios: <strong>${filtrados.length}</strong></p>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Extintor</th>
+                                <th>Tipo Servicio</th>
+                                <th>Técnico</th>
+                                <th>Costo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                let totalIngresos = 0;
+                filtrados.forEach(m => {
+                    totalIngresos += parseFloat(m.costo);
+                    html += `
+                        <tr>
+                            <td>${m.fecha_servicio}</td>
+                            <td>${m.cliente_nombre}</td>
+                            <td>${m.extintor_serie}</td>
+                            <td>${m.tipo_servicio}</td>
+                            <td>${m.tecnico || '-'}</td>
+                            <td>$${parseFloat(m.costo).toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-primary">
+                                <td colspan="5" class="text-end"><strong>Total Ingresos:</strong></td>
+                                <td><strong>$${totalIngresos.toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                `;
+                
+                document.getElementById('resultado-reporte').innerHTML = html;
+            });
+    }
+    
+    function generarReporteVencimientos() {
+        fetch('/api/alertas')
+            .then(response => response.json())
+            .then(data => {
+                let html = `
+                    <h5>Próximos Vencimientos</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="alert alert-danger">
+                                <h6>Vencidos: ${data.vencidos.length}</h6>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="alert alert-warning">
+                                <h6>Próximos 7 días: ${data.proximos_7.length}</h6>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="alert alert-info">
+                                <h6>Próximos 30 días: ${data.proximos_30.length}</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Cliente</th>
+                                <th>Fecha Vencimiento</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                [...data.vencidos, ...data.proximos_7, ...data.proximos_30].forEach(item => {
+                    let badge = 'bg-info';
+                    let texto = `${item.dias} días restantes`;
+                    
+                    if (item.dias < 0) {
+                        badge = 'bg-danger';
+                        texto = `${Math.abs(item.dias)} días vencido`;
+                    } else if (item.dias <= 7) {
+                        badge = 'bg-warning';
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${item.serie}</strong></td>
+                            <td>${item.cliente}</td>
+                            <td>${item.fecha}</td>
+                            <td><span class="badge ${badge}">${texto}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+                
+                document.getElementById('resultado-reporte').innerHTML = html;
+            });
+    }
+    
+    function generarReporteIngresos(inicio, fin) {
+        fetch('/api/mantenimientos')
+            .then(response => response.json())
+            .then(data => {
+                const filtrados = data.filter(m => {
+                    const fecha = m.fecha_servicio.split(' ')[0];
+                    return fecha >= inicio && fecha <= fin;
+                });
+                
+                // Agrupar por tipo de servicio
+                const porTipo = {};
+                filtrados.forEach(m => {
+                    if (!porTipo[m.tipo_servicio]) {
+                        porTipo[m.tipo_servicio] = {cantidad: 0, total: 0};
+                    }
+                    porTipo[m.tipo_servicio].cantidad++;
+                    porTipo[m.tipo_servicio].total += parseFloat(m.costo);
+                });
+                
+                let html = `
+                    <h5>Ingresos por Tipo de Servicio del ${inicio} al ${fin}</h5>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Tipo de Servicio</th>
+                                <th>Cantidad</th>
+                                <th>Total Ingresos</th>
+                                <th>Promedio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                let totalGeneral = 0;
+                let cantidadGeneral = 0;
+                
+                Object.keys(porTipo).forEach(tipo => {
+                    const datos = porTipo[tipo];
+                    totalGeneral += datos.total;
+                    cantidadGeneral += datos.cantidad;
+                    const promedio = datos.total / datos.cantidad;
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${tipo}</strong></td>
+                            <td>${datos.cantidad}</td>
+                            <td>$${datos.total.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                            <td>$${promedio.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-success">
+                                <td><strong>TOTAL</strong></td>
+                                <td><strong>${cantidadGeneral}</strong></td>
+                                <td><strong>$${totalGeneral.toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></td>
+                                <td><strong>$${(totalGeneral/cantidadGeneral).toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                `;
+                
+                document.getElementById('resultado-reporte').innerHTML = html;
+            });
+    }
+    
+    function generarReporteClientes() {
+        Promise.all([
+            fetch('/api/clientes').then(r => r.json()),
+            fetch('/api/extintores').then(r => r.json()),
+            fetch('/api/mantenimientos').then(r => r.json())
+        ]).then(([clientes, extintores, mantenimientos]) => {
+            let html = `
+                <h5>Resumen por Cliente</h5>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Extintores</th>
+                            <th>Servicios Totales</th>
+                            <th>Último Servicio</th>
+                            <th>Total Facturado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            clientes.forEach(cliente => {
+                const extintoresCliente = extintores.filter(e => e.cliente_id === cliente.id);
+                const idsExtintores = extintoresCliente.map(e => e.id);
+                const mantCliente = mantenimientos.filter(m => idsExtintores.includes(m.extintor_id));
+                
+                const totalFacturado = mantCliente.reduce((sum, m) => sum + parseFloat(m.costo), 0);
+                const ultimoServicio = mantCliente.length > 0 ? mantCliente[0].fecha_servicio : '-';
+                
+                html += `
+                    <tr>
+                        <td><strong>${cliente.nombre}</strong></td>
+                        <td>${extintoresCliente.length}</td>
+                        <td>${mantCliente.length}</td>
+                        <td>${ultimoServicio}</td>
+                        <td>$${totalFacturado.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('resultado-reporte').innerHTML = html;
+        });
+    }
+    
+    function exportarExcel() {
+        alert('Función de exportación a Excel disponible en versión completa');
+    }
+    
+    cargarResumen();
+</script>
+{% endblock %}

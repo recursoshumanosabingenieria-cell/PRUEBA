@@ -1,0 +1,742 @@
+{% extends "base.html" %}
+
+{% block title %}Órdenes de Trabajo - Sistema de Extintores{% endblock %}
+
+{% block extra_head %}
+<!-- Socket.IO para sincronización en tiempo real -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="page-title">
+            <i class="bi bi-clipboard-check"></i> Órdenes de Trabajo
+        </h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaOrdenModal">
+            <i class="bi bi-plus-circle"></i> Nueva Orden de Trabajo
+        </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select class="form-select" id="filtroEstado">
+                        <option value="">Todos</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="En Proceso">En Proceso</option>
+                        <option value="Completada">Completada</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="buscarOrden" placeholder="Número de orden o cliente...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Órdenes -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Número Orden</th>
+                            <th>Cliente</th>
+                            <th>Fecha Recojo</th>
+                            <th>Cantidad</th>
+                            <th>Registrados</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaOrdenes">
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Orden -->
+<div class="modal fade" id="nuevaOrdenModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Orden de Trabajo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNuevaOrden">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Cliente *</label>
+                            <select class="form-select" id="clienteOrden" required>
+                                <option value="">Seleccione un cliente...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Fecha de Recojo *</label>
+                            <input type="date" class="form-control" id="fechaRecojo" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Extintores a Recoger *</label>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-md-4">
+                                            <select class="form-select form-select-sm" id="tipoExtintorTemp">
+                                                <option value="">Tipo...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <select class="form-select form-select-sm" id="capacidadExtintorTemp">
+                                                <option value="">Capacidad...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="number" class="form-control form-control-sm" id="cantidadExtintorTemp" placeholder="Cant." min="1">
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button type="button" class="btn btn-sm btn-success w-100" onclick="agregarExtintorALista()">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="listaExtintores" class="border-top pt-2">
+                                        <small class="text-muted">No hay extintores agregados</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono de Contacto</label>
+                            <input type="tel" class="form-control" id="telefonoContacto">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Dirección de Recojo</label>
+                            <input type="text" class="form-control" id="direccionRecojo">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Contacto en Sitio</label>
+                            <input type="text" class="form-control" id="contactoRecojo">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observacionesOrden" rows="3"></textarea>
+                        </div>
+                        
+                        <!-- Asignación de Trabajadores -->
+                        <div class="col-md-12">
+                            <label class="form-label"><i class="bi bi-people-fill"></i> Asignar Trabajadores (Opcional)</label>
+                            <div class="dropdown w-100">
+                                <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="dropdownTrabajadores" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-plus"></i> <span id="textoTrabajadores">Seleccionar trabajadores...</span>
+                                </button>
+                                <ul class="dropdown-menu w-100 p-2" aria-labelledby="dropdownTrabajadores" style="max-height: 300px; overflow-y: auto;">
+                                    <li id="listaTrabajadoresOrden">
+                                        <small class="text-muted px-3">Cargando personal...</small>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div id="trabajadoresSeleccionadosChips" class="mt-2">
+                                <!-- Chips de trabajadores seleccionados -->
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarOrden()">Guardar Orden</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-question-circle-fill me-2"></i>Confirmación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalConfirmacionMensaje">
+                ¿Está seguro de realizar esta acción?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarAccion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Notificación -->
+<div class="modal fade" id="modalNotificacion" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="modalNotificacionHeader">
+                <h5 class="modal-title" id="modalNotificacionTitulo">
+                    <i class="bi bi-info-circle-fill me-2"></i>Notificación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalNotificacionMensaje">
+                Mensaje de notificación
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenedor de Toast (notificaciones flotantes) -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="toastNotificacion" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header" id="toastHeader">
+            <i class="bi me-2" id="toastIcon"></i>
+            <strong class="me-auto" id="toastTitulo">Notificación</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMensaje">
+            Mensaje de notificación
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let ordenes = [];
+let clientes = [];
+let tiposExtintor = [];
+let capacidadesExtintor = [];
+let extintoresEnOrden = [];
+let personalDisponible = [];
+let trabajadoresSeleccionados = [];
+
+// ========== SINCRONIZACIÓN EN TIEMPO REAL ==========
+let socket = null;
+let socketConectado = false;
+
+function inicializarSocketIO() {
+    try {
+        socket = io({
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5
+        });
+        
+        socket.on('connect', function() {
+            socketConectado = true;
+            console.log('[SYNC] ✅ Conectado al servidor en tiempo real');
+        });
+        
+        socket.on('disconnect', function() {
+            socketConectado = false;
+            console.log('[SYNC] ❌ Desconectado del servidor');
+        });
+        
+        // Escuchar cambios en órdenes
+        socket.on('cambio_orden', function(evento) {
+            console.log('[SYNC] 🔄 Cambio detectado:', evento.tipo);
+            // Recargar lista de órdenes
+            cargarOrdenes();
+        });
+        
+        socket.on('connect_error', function(error) {
+            console.error('[SYNC] ❌ Error de conexión:', error);
+        });
+        
+    } catch (error) {
+        console.error('[SYNC] ❌ Error al inicializar Socket.IO:', error);
+    }
+}
+
+// Cargar datos al inicio
+$(document).ready(function() {
+    // Inicializar sincronización en tiempo real
+    inicializarSocketIO();
+    
+    cargarClientes();
+    cargarOrdenes();
+    cargarCatalogos();
+    cargarPersonal();
+    
+    // Establecer fecha de hoy por defecto
+    document.getElementById('fechaRecojo').valueAsDate = new Date();
+    
+    // Filtros
+    $('#filtroEstado, #buscarOrden').on('change keyup', filtrarOrdenes);
+    
+    // Polling de respaldo: recargar cada 5 segundos
+    setInterval(function() {
+        if (!socketConectado) {
+            console.log('[POLLING] Recargando órdenes...');
+            cargarOrdenes();
+        }
+    }, 5000);
+});
+
+// Funciones auxiliares para modales y toasts
+function mostrarToast(mensaje, tipo = 'success') {
+    const toastEl = document.getElementById('toastNotificacion');
+    const toastHeader = document.getElementById('toastHeader');
+    const toastIcon = document.getElementById('toastIcon');
+    const toastTitulo = document.getElementById('toastTitulo');
+    const toastMensaje = document.getElementById('toastMensaje');
+    
+    // Configurar según tipo
+    if (tipo === 'success') {
+        toastHeader.className = 'toast-header bg-success text-white';
+        toastIcon.className = 'bi bi-check-circle-fill me-2';
+        toastTitulo.textContent = 'Éxito';
+    } else if (tipo === 'error') {
+        toastHeader.className = 'toast-header bg-danger text-white';
+        toastIcon.className = 'bi bi-x-circle-fill me-2';
+        toastTitulo.textContent = 'Error';
+    } else if (tipo === 'warning') {
+        toastHeader.className = 'toast-header bg-warning';
+        toastIcon.className = 'bi bi-exclamation-triangle-fill me-2';
+        toastTitulo.textContent = 'Advertencia';
+    } else {
+        toastHeader.className = 'toast-header bg-info text-white';
+        toastIcon.className = 'bi bi-info-circle-fill me-2';
+        toastTitulo.textContent = 'Información';
+    }
+    
+    toastMensaje.textContent = mensaje;
+    
+    const toast = new bootstrap.Toast(toastEl, {
+        autohide: true,
+        delay: 3000
+    });
+    toast.show();
+}
+
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    const modal = new bootstrap.Modal(document.getElementById('modalNotificacion'));
+    const header = document.getElementById('modalNotificacionHeader');
+    const titulo = document.getElementById('modalNotificacionTitulo');
+    const mensajeEl = document.getElementById('modalNotificacionMensaje');
+    
+    // Configurar colores según tipo
+    if (tipo === 'success') {
+        header.className = 'modal-header bg-success text-white';
+        titulo.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Éxito';
+    } else if (tipo === 'error') {
+        header.className = 'modal-header bg-danger text-white';
+        titulo.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Error';
+    } else if (tipo === 'warning') {
+        header.className = 'modal-header bg-warning';
+        titulo.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Advertencia';
+    } else {
+        header.className = 'modal-header bg-info text-white';
+        titulo.innerHTML = '<i class="bi bi-info-circle-fill me-2"></i>Información';
+    }
+    
+    mensajeEl.textContent = mensaje;
+    modal.show();
+}
+
+function mostrarConfirmacion(mensaje, callback) {
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+    document.getElementById('modalConfirmacionMensaje').textContent = mensaje;
+    
+    // Remover listeners anteriores
+    const btnConfirmar = document.getElementById('btnConfirmarAccion');
+    const nuevoBtn = btnConfirmar.cloneNode(true);
+    btnConfirmar.parentNode.replaceChild(nuevoBtn, btnConfirmar);
+    
+    // Agregar nuevo listener
+    nuevoBtn.addEventListener('click', function() {
+        modal.hide();
+        callback();
+    });
+    
+    modal.show();
+}
+
+// Cargar personal disponible
+function cargarPersonal() {
+    $.get('/api/usuarios', function(data) {
+        personalDisponible = data.filter(p => p.activo);
+        mostrarListaTrabajadores();
+    });
+}
+
+function mostrarListaTrabajadores() {
+    const lista = $('#listaTrabajadoresOrden');
+    
+    if (personalDisponible.length === 0) {
+        lista.html('<li><small class="text-muted px-3">No hay personal disponible</small></li>');
+        return;
+    }
+    
+    let html = '';
+    personalDisponible.forEach(p => {
+        const cargo = p.rol === 'TECNICO' ? 'Técnico' : p.rol === 'ADMINISTRATIVO' ? 'Administrativo' : 'Gerente';
+        const badgeColor = p.rol === 'TECNICO' ? 'warning' : p.rol === 'ADMINISTRATIVO' ? 'info' : 'danger';
+        const isChecked = trabajadoresSeleccionados.includes(p.nombre_completo) ? 'checked' : '';
+        
+        html += `
+            <li class="dropdown-item p-0">
+                <div class="form-check px-3 py-2">
+                    <input class="form-check-input" type="checkbox" value="${p.nombre_completo}" 
+                           id="trabajador_${p.id}" ${isChecked} onchange="toggleTrabajador(this)">
+                    <label class="form-check-label w-100" for="trabajador_${p.id}" style="cursor: pointer;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${p.nombre_completo}</strong>
+                                <br><small class="text-muted">${p.email || 'Sin email'}</small>
+                            </div>
+                            <span class="badge bg-${badgeColor}">${cargo}</span>
+                        </div>
+                    </label>
+                </div>
+            </li>
+        `;
+    });
+    
+    lista.html(html);
+    actualizarTextoDropdown();
+    mostrarChipsTrabajadores();
+}
+
+function actualizarTextoDropdown() {
+    const texto = $('#textoTrabajadores');
+    if (trabajadoresSeleccionados.length === 0) {
+        texto.text('Seleccionar trabajadores...');
+    } else if (trabajadoresSeleccionados.length === 1) {
+        texto.text(trabajadoresSeleccionados[0]);
+    } else {
+        texto.text(`${trabajadoresSeleccionados.length} trabajadores seleccionados`);
+    }
+}
+
+function mostrarChipsTrabajadores() {
+    const container = $('#trabajadoresSeleccionadosChips');
+    
+    if (trabajadoresSeleccionados.length === 0) {
+        container.html('');
+        return;
+    }
+    
+    let html = '<div class="d-flex flex-wrap gap-2">';
+    trabajadoresSeleccionados.forEach(nombre => {
+        html += `
+            <span class="badge bg-primary d-flex align-items-center gap-1" style="font-size: 0.9rem; padding: 0.4rem 0.6rem;">
+                <i class="bi bi-person-fill"></i>
+                ${nombre}
+                <button type="button" class="btn-close btn-close-white" style="font-size: 0.6rem;" 
+                        onclick="removerTrabajador('${nombre.replace(/'/g, "\\'")}')"></button>
+            </span>
+        `;
+    });
+    html += '</div>';
+    
+    container.html(html);
+}
+
+function removerTrabajador(nombre) {
+    trabajadoresSeleccionados = trabajadoresSeleccionados.filter(t => t !== nombre);
+    mostrarListaTrabajadores();
+}
+
+function toggleTrabajador(checkbox) {
+    const nombre = checkbox.value;
+    if (checkbox.checked) {
+        if (!trabajadoresSeleccionados.includes(nombre)) {
+            trabajadoresSeleccionados.push(nombre);
+        }
+    } else {
+        trabajadoresSeleccionados = trabajadoresSeleccionados.filter(t => t !== nombre);
+    }
+    mostrarListaTrabajadores();
+}
+
+// Cargar catálogos de tipos y capacidades
+function cargarCatalogos() {
+    // Cargar tipos
+    $.get('/api/catalogo/tipos', function(data) {
+        tiposExtintor = data;
+        const select = $('#tipoExtintorTemp');
+        select.empty().append('<option value="">Tipo...</option>');
+        data.forEach(tipo => {
+            select.append(`<option value="${tipo.id}">${tipo.nombre} - ${tipo.clase_fuego}</option>`);
+        });
+    });
+    
+    // Cargar capacidades
+    $.get('/api/catalogo/capacidades', function(data) {
+        capacidadesExtintor = data;
+        const select = $('#capacidadExtintorTemp');
+        select.empty().append('<option value="">Capacidad...</option>');
+        data.forEach(cap => {
+            select.append(`<option value="${cap.id}">${cap.capacidad}</option>`);
+        });
+    });
+}
+
+// Agregar extintor a la lista
+function agregarExtintorALista() {
+    const tipoId = parseInt($('#tipoExtintorTemp').val());
+    const capacidadId = parseInt($('#capacidadExtintorTemp').val());
+    const cantidad = parseInt($('#cantidadExtintorTemp').val());
+    
+    if (!tipoId || !capacidadId || !cantidad) {
+        mostrarNotificacion('Por favor complete todos los campos', 'warning');
+        return;
+    }
+    
+    const tipo = tiposExtintor.find(t => t.id === tipoId);
+    const capacidad = capacidadesExtintor.find(c => c.id === capacidadId);
+    
+    extintoresEnOrden.push({
+        tipo_id: tipoId,
+        tipo_nombre: tipo.nombre,
+        capacidad_id: capacidadId,
+        capacidad_nombre: capacidad.capacidad,
+        cantidad: cantidad
+    });
+    
+    actualizarListaExtintores();
+    
+    // Limpiar campos
+    $('#tipoExtintorTemp').val('');
+    $('#capacidadExtintorTemp').val('');
+    $('#cantidadExtintorTemp').val('');
+}
+
+// Actualizar visualización de la lista
+function actualizarListaExtintores() {
+    const lista = $('#listaExtintores');
+    
+    if (extintoresEnOrden.length === 0) {
+        lista.html('<small class="text-muted">No hay extintores agregados</small>');
+        return;
+    }
+    
+    let html = '<div class="list-group list-group-flush">';
+    extintoresEnOrden.forEach((ext, index) => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-2">
+                <span>
+                    <strong>${ext.cantidad}x</strong> 
+                    <span class="badge bg-primary">${ext.tipo_nombre}</span>
+                    <span class="badge bg-secondary">${ext.capacidad_nombre}</span>
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarExtintorDeLista(${index})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    const totalExtintores = extintoresEnOrden.reduce((sum, ext) => sum + ext.cantidad, 0);
+    html += `<div class="mt-2"><strong>Total: ${totalExtintores} extintores</strong></div>`;
+    
+    lista.html(html);
+}
+
+// Eliminar extintor de la lista
+function eliminarExtintorDeLista(index) {
+    extintoresEnOrden.splice(index, 1);
+    actualizarListaExtintores();
+}
+
+function cargarClientes() {
+    $.get('/api/clientes', function(data) {
+        clientes = data;
+        const select = $('#clienteOrden');
+        select.empty().append('<option value="">Seleccione un cliente...</option>');
+        data.forEach(cliente => {
+            select.append(`<option value="${cliente.id}">${cliente.nombre}</option>`);
+        });
+    });
+}
+
+function cargarOrdenes() {
+    $.get('/api/ordenes', function(data) {
+        ordenes = data;
+        mostrarOrdenes(data);
+    });
+}
+
+function mostrarOrdenes(data) {
+    const tbody = $('#tablaOrdenes');
+    tbody.empty();
+    
+    if (data.length === 0) {
+        tbody.append(`
+            <tr>
+                <td colspan="7" class="text-center text-muted">
+                    No hay órdenes de trabajo registradas
+                </td>
+            </tr>
+        `);
+        return;
+    }
+    
+    data.forEach(orden => {
+        const progreso = orden.cantidad_extintores > 0 
+            ? Math.round((orden.extintores_registrados / orden.cantidad_extintores) * 100)
+            : 0;
+        
+        let estadoBadge = '';
+        if (orden.estado === 'Pendiente') {
+            estadoBadge = '<span class="badge bg-warning">Pendiente</span>';
+        } else if (orden.estado === 'En Proceso') {
+            estadoBadge = '<span class="badge bg-info">En Proceso</span>';
+        } else if (orden.estado === 'Completada') {
+            estadoBadge = '<span class="badge bg-success">Completada</span>';
+        }
+        
+        tbody.append(`
+            <tr>
+                <td><strong>${orden.numero_orden}</strong></td>
+                <td>${orden.cliente_nombre}</td>
+                <td>${formatearFecha(orden.fecha_recojo)}</td>
+                <td>${orden.cantidad_extintores}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">${orden.extintores_registrados}/${orden.cantidad_extintores}</span>
+                        <div class="progress" style="width: 100px; height: 8px;">
+                            <div class="progress-bar ${progreso === 100 ? 'bg-success' : 'bg-info'}" 
+                                 style="width: ${progreso}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td>${estadoBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="verOrden(${orden.id})">
+                        <i class="bi bi-eye"></i> Ver
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarOrden(${orden.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+}
+
+function filtrarOrdenes() {
+    const estado = $('#filtroEstado').val();
+    const busqueda = $('#buscarOrden').val().toLowerCase();
+    
+    let filtradas = ordenes;
+    
+    if (estado) {
+        filtradas = filtradas.filter(o => o.estado === estado);
+    }
+    
+    if (busqueda) {
+        filtradas = filtradas.filter(o => 
+            o.numero_orden.toLowerCase().includes(busqueda) ||
+            o.cliente_nombre.toLowerCase().includes(busqueda)
+        );
+    }
+    
+    mostrarOrdenes(filtradas);
+}
+
+function guardarOrden() {
+    const form = document.getElementById('formNuevaOrden');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    // Validar que haya al menos un extintor agregado
+    if (extintoresEnOrden.length === 0) {
+        mostrarNotificacion('Debe agregar al menos un tipo de extintor', 'warning');
+        return;
+    }
+    
+    // Calcular cantidad total
+    const cantidadTotal = extintoresEnOrden.reduce((sum, ext) => sum + ext.cantidad, 0);
+    
+    const data = {
+        cliente_id: parseInt($('#clienteOrden').val()),
+        fecha_recojo: $('#fechaRecojo').val(),
+        cantidad_extintores: cantidadTotal,
+        extintores: extintoresEnOrden,
+        direccion_recojo: $('#direccionRecojo').val(),
+        contacto_recojo: $('#contactoRecojo').val(),
+        telefono_contacto: $('#telefonoContacto').val(),
+        observaciones: $('#observacionesOrden').val(),
+        trabajador_asignado: trabajadoresSeleccionados.join(', ')
+    };
+    
+    $.ajax({
+        url: '/api/ordenes',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            $('#nuevaOrdenModal').modal('hide');
+            form.reset();
+            extintoresEnOrden = [];
+            trabajadoresSeleccionados = [];
+            actualizarListaExtintores();
+            mostrarListaTrabajadores();
+            cargarOrdenes();
+            mostrarNotificacion('Orden de trabajo creada exitosamente: ' + response.numero_orden, 'success');
+            // Redirigir a la página de detalle después de un momento
+            setTimeout(function() {
+                window.location.href = '/ordenes/' + response.id;
+            }, 1500);
+        },
+        error: function() {
+            mostrarNotificacion('Error al crear la orden de trabajo', 'error');
+        }
+    });
+}
+
+function verOrden(id) {
+    window.location.href = '/ordenes/' + id;
+}
+
+function eliminarOrden(id) {
+    mostrarConfirmacion('¿Está seguro de eliminar esta orden de trabajo? Esta acción no se puede deshacer.', function() {
+        $.ajax({
+            url: '/api/ordenes/' + id,
+            method: 'DELETE',
+            success: function() {
+                cargarOrdenes();
+                mostrarToast('Orden eliminada exitosamente', 'success');
+            },
+            error: function() {
+                mostrarToast('Error al eliminar la orden', 'error');
+            }
+        });
+    });
+}
+
+function formatearFecha(fecha) {
+    const d = new Date(fecha + 'T00:00:00');
+    return d.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+</script>
+{% endblock %}

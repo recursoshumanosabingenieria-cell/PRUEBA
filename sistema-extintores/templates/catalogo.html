@@ -1,0 +1,630 @@
+{% extends "base.html" %}
+
+{% block title %}Catálogo de Extintores - Sistema de Extintores{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-book"></i> Catálogo de Extintores</h1>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="catalogoTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tipos-tab" data-bs-toggle="tab" data-bs-target="#tipos" type="button">
+            <i class="bi bi-tag"></i> Tipos
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="capacidades-tab" data-bs-toggle="tab" data-bs-target="#capacidades" type="button">
+            <i class="bi bi-speedometer"></i> Capacidades
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="marcas-tab" data-bs-toggle="tab" data-bs-target="#marcas" type="button">
+            <i class="bi bi-award"></i> Marcas
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="catalogoTabContent">
+    <!-- TIPOS -->
+    <div class="tab-pane fade show active" id="tipos" role="tabpanel">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Tipos de Extintores</h5>
+                    <button class="btn btn-primary btn-sm" onclick="nuevoTipo()">
+                        <i class="bi bi-plus-circle"></i> Nuevo Tipo
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Acrónimo</th>
+                                <th>Nombre Completo</th>
+                                <th>Clase</th>
+                                <th>Color</th>
+                                <th>Descripción</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-tipos"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CAPACIDADES -->
+    <div class="tab-pane fade" id="capacidades" role="tabpanel">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Capacidades</h5>
+                    <button class="btn btn-primary btn-sm" onclick="nuevaCapacidad()">
+                        <i class="bi bi-plus-circle"></i> Nueva Capacidad
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Capacidad</th>
+                                <th>Unidad</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-capacidades"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MARCAS -->
+    <div class="tab-pane fade" id="marcas" role="tabpanel">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Marcas</h5>
+                    <button class="btn btn-primary btn-sm" onclick="nuevaMarca()">
+                        <i class="bi bi-plus-circle"></i> Nueva Marca
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Marca</th>
+                                <th>Origen</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-marcas"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tipo -->
+<div class="modal fade" id="modalTipo" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTipoTitulo">Nuevo Tipo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="tipo-id">
+                <div class="mb-3">
+                    <label class="form-label">Acrónimo / Nombre Corto *</label>
+                    <input type="text" class="form-control" id="tipo-nombre" placeholder="Ej: PQS, CO2, AFFF" required>
+                    <small class="text-muted">Nombre corto o acrónimo del tipo de extintor</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nombre Completo</label>
+                    <input type="text" class="form-control" id="tipo-nombre-completo" placeholder="Ej: Polvo Químico Seco">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Clase de Fuego</label>
+                    <input type="text" class="form-control" id="tipo-clase-fuego" placeholder="Ej: ABC, BC, K">
+                    <small class="text-muted">Clases de fuego que combate (A, B, C, D, K)</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Color Identificador</label>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="color" class="form-control form-control-color" id="tipo-color" value="#6c757d" style="width: 60px; height: 38px;">
+                        <input type="text" class="form-control" id="tipo-color-hex" value="#6c757d" placeholder="#6c757d" maxlength="7" style="width: 100px;">
+                        <small class="text-muted">Color para identificar este tipo</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea class="form-control" id="tipo-descripcion" rows="2" placeholder="Descripción adicional"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarTipo()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Capacidad -->
+<div class="modal fade" id="modalCapacidad" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCapacidadTitulo">Nueva Capacidad</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="capacidad-id">
+                <div class="mb-3">
+                    <label class="form-label">Capacidad *</label>
+                    <input type="text" class="form-control" id="capacidad-valor" placeholder="Ej: 6, 9, 12" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Unidad *</label>
+                    <select class="form-select" id="capacidad-unidad">
+                        <option value="kg">kg (kilogramos)</option>
+                        <option value="lb">lb (libras)</option>
+                        <option value="L">L (litros)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarCapacidad()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmación Eliminar -->
+<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="mensaje-confirmacion">¿Está seguro de eliminar este elemento?</p>
+                <p class="text-muted mb-0"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">
+                    <i class="bi bi-trash me-1"></i>Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Marca -->
+<div class="modal fade" id="modalMarca" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalMarcaTitulo">Nueva Marca</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="marca-id">
+                <div class="mb-3">
+                    <label class="form-label">Nombre de la Marca *</label>
+                    <input type="text" class="form-control" id="marca-nombre" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Origen *</label>
+                    <select class="form-select" id="marca-origen">
+                        <option value="Nacional">Nacional</option>
+                        <option value="Chino">Chino</option>
+                        <option value="Americano">Americano</option>
+                        <option value="Europeo">Europeo</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarMarca()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ============================================
+    // TIPOS DE EXTINTORES
+    // ============================================
+    
+    function cargarTipos() {
+        fetch('/api/catalogo/tipos')
+            .then(response => response.json())
+            .then(data => {
+                const tabla = document.getElementById('tabla-tipos');
+                tabla.innerHTML = '';
+                data.forEach(tipo => {
+                    const claseBadge = tipo.clase_fuego ? `<span class="badge bg-info">${tipo.clase_fuego}</span>` : '-';
+                    const color = tipo.color || '#6c757d';
+                    tabla.innerHTML += `
+                        <tr>
+                            <td><strong>${tipo.nombre}</strong></td>
+                            <td>${tipo.nombre_completo || '-'}</td>
+                            <td>${claseBadge}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width: 30px; height: 30px; background-color: ${color}; border: 2px solid #dee2e6; border-radius: 4px;"></div>
+                                    <small class="text-muted">${color}</small>
+                                </div>
+                            </td>
+                            <td><small>${tipo.descripcion || '-'}</small></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary btn-editar-tipo" data-id="${tipo.id}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger btn-eliminar-tipo" data-id="${tipo.id}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar tipos:', error);
+                const tabla = document.getElementById('tabla-tipos');
+                tabla.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar los datos. Verifica la consola.</td></tr>';
+            });
+    }
+    
+    function nuevoTipo() {
+        document.getElementById('tipo-id').value = '';
+        document.getElementById('tipo-nombre').value = '';
+        document.getElementById('tipo-nombre-completo').value = '';
+        document.getElementById('tipo-clase-fuego').value = '';
+        document.getElementById('tipo-color').value = '#6c757d';
+        document.getElementById('tipo-color-hex').value = '#6c757d';
+        document.getElementById('tipo-descripcion').value = '';
+        document.getElementById('modalTipoTitulo').textContent = 'Nuevo Tipo';
+        new bootstrap.Modal(document.getElementById('modalTipo')).show();
+    }
+    
+    function editarTipo(id) {
+        fetch(`/api/catalogo/tipos`)
+            .then(response => response.json())
+            .then(data => {
+                const tipo = data.find(t => t.id === id);
+                document.getElementById('tipo-id').value = tipo.id;
+                document.getElementById('tipo-nombre').value = tipo.nombre;
+                document.getElementById('tipo-nombre-completo').value = tipo.nombre_completo || '';
+                document.getElementById('tipo-clase-fuego').value = tipo.clase_fuego || '';
+                const color = tipo.color || '#6c757d';
+                document.getElementById('tipo-color').value = color;
+                document.getElementById('tipo-color-hex').value = color;
+                document.getElementById('tipo-descripcion').value = tipo.descripcion || '';
+                document.getElementById('modalTipoTitulo').textContent = 'Editar Tipo';
+                new bootstrap.Modal(document.getElementById('modalTipo')).show();
+            });
+    }
+    
+    function guardarTipo() {
+        const id = document.getElementById('tipo-id').value;
+        const datos = {
+            nombre: document.getElementById('tipo-nombre').value,
+            nombre_completo: document.getElementById('tipo-nombre-completo').value,
+            clase_fuego: document.getElementById('tipo-clase-fuego').value,
+            color: document.getElementById('tipo-color').value,
+            descripcion: document.getElementById('tipo-descripcion').value
+        };
+        
+        const url = id ? `/api/catalogo/tipos/${id}` : '/api/catalogo/tipos';
+        const method = id ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalTipo')).hide();
+                cargarTipos();
+            }
+        });
+    }
+    
+    // ============================================
+    // CAPACIDADES
+    // ============================================
+    
+    function cargarCapacidades() {
+        fetch('/api/catalogo/capacidades')
+            .then(response => response.json())
+            .then(data => {
+                const tabla = document.getElementById('tabla-capacidades');
+                tabla.innerHTML = '';
+                data.forEach(cap => {
+                    tabla.innerHTML += `
+                        <tr>
+                            <td><strong>${cap.capacidad}</strong></td>
+                            <td>${cap.unidad}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary btn-editar-capacidad" data-id="${cap.id}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger btn-eliminar-capacidad" data-id="${cap.id}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+    }
+    
+    function nuevaCapacidad() {
+        document.getElementById('capacidad-id').value = '';
+        document.getElementById('capacidad-valor').value = '';
+        document.getElementById('capacidad-unidad').value = 'kg';
+        document.getElementById('modalCapacidadTitulo').textContent = 'Nueva Capacidad';
+        new bootstrap.Modal(document.getElementById('modalCapacidad')).show();
+    }
+    
+    function editarCapacidad(id) {
+        fetch(`/api/catalogo/capacidades`)
+            .then(response => response.json())
+            .then(data => {
+                const cap = data.find(c => c.id === id);
+                document.getElementById('capacidad-id').value = cap.id;
+                document.getElementById('capacidad-valor').value = cap.capacidad;
+                document.getElementById('capacidad-unidad').value = cap.unidad;
+                document.getElementById('modalCapacidadTitulo').textContent = 'Editar Capacidad';
+                new bootstrap.Modal(document.getElementById('modalCapacidad')).show();
+            });
+    }
+    
+    function guardarCapacidad() {
+        const id = document.getElementById('capacidad-id').value;
+        const datos = {
+            capacidad: document.getElementById('capacidad-valor').value,
+            unidad: document.getElementById('capacidad-unidad').value
+        };
+        
+        const url = id ? `/api/catalogo/capacidades/${id}` : '/api/catalogo/capacidades';
+        const method = id ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalCapacidad')).hide();
+                cargarCapacidades();
+            }
+        });
+    }
+    
+    // ============================================
+    // MARCAS
+    // ============================================
+    
+    function cargarMarcas() {
+        fetch('/api/catalogo/marcas')
+            .then(response => response.json())
+            .then(data => {
+                const tabla = document.getElementById('tabla-marcas');
+                tabla.innerHTML = '';
+                data.forEach(marca => {
+                    const origenBadge = marca.origen === 'Nacional' ? 'bg-success' : 
+                                       marca.origen === 'Chino' ? 'bg-warning' : 
+                                       marca.origen === 'Americano' ? 'bg-primary' : 'bg-secondary';
+                    tabla.innerHTML += `
+                        <tr>
+                            <td><strong>${marca.nombre}</strong></td>
+                            <td><span class="badge ${origenBadge}">${marca.origen}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary btn-editar-marca" data-id="${marca.id}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger btn-eliminar-marca" data-id="${marca.id}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+    }
+    
+    function nuevaMarca() {
+        document.getElementById('marca-id').value = '';
+        document.getElementById('marca-nombre').value = '';
+        document.getElementById('marca-origen').value = 'Nacional';
+        document.getElementById('modalMarcaTitulo').textContent = 'Nueva Marca';
+        new bootstrap.Modal(document.getElementById('modalMarca')).show();
+    }
+    
+    function editarMarca(id) {
+        fetch(`/api/catalogo/marcas`)
+            .then(response => response.json())
+            .then(data => {
+                const marca = data.find(m => m.id === id);
+                document.getElementById('marca-id').value = marca.id;
+                document.getElementById('marca-nombre').value = marca.nombre;
+                document.getElementById('marca-origen').value = marca.origen;
+                document.getElementById('modalMarcaTitulo').textContent = 'Editar Marca';
+                new bootstrap.Modal(document.getElementById('modalMarca')).show();
+            });
+    }
+    
+    function guardarMarca() {
+        const id = document.getElementById('marca-id').value;
+        const datos = {
+            nombre: document.getElementById('marca-nombre').value,
+            origen: document.getElementById('marca-origen').value
+        };
+        
+        const url = id ? `/api/catalogo/marcas/${id}` : '/api/catalogo/marcas';
+        const method = id ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalMarca')).hide();
+                cargarMarcas();
+            }
+        });
+    }
+    
+    // ============================================
+    // EVENT DELEGATION PARA BOTONES DINÁMICOS
+    // ============================================
+    
+    let itemAEliminar = { tipo: null, id: null };
+    
+    // Event delegation para tabla de tipos
+    document.getElementById('tabla-tipos').addEventListener('click', function(e) {
+        const btnEditar = e.target.closest('.btn-editar-tipo');
+        const btnEliminar = e.target.closest('.btn-eliminar-tipo');
+        
+        if (btnEditar) {
+            const id = parseInt(btnEditar.dataset.id);
+            editarTipo(id);
+        } else if (btnEliminar) {
+            const id = parseInt(btnEliminar.dataset.id);
+            itemAEliminar = { tipo: 'tipo', id: id };
+            document.getElementById('mensaje-confirmacion').textContent = '¿Está seguro de eliminar este tipo de extintor?';
+            new bootstrap.Modal(document.getElementById('modalConfirmarEliminar')).show();
+        }
+    });
+    
+    // Event delegation para tabla de capacidades
+    document.getElementById('tabla-capacidades').addEventListener('click', function(e) {
+        const btnEditar = e.target.closest('.btn-editar-capacidad');
+        const btnEliminar = e.target.closest('.btn-eliminar-capacidad');
+        
+        if (btnEditar) {
+            const id = parseInt(btnEditar.dataset.id);
+            editarCapacidad(id);
+        } else if (btnEliminar) {
+            const id = parseInt(btnEliminar.dataset.id);
+            itemAEliminar = { tipo: 'capacidad', id: id };
+            document.getElementById('mensaje-confirmacion').textContent = '¿Está seguro de eliminar esta capacidad?';
+            new bootstrap.Modal(document.getElementById('modalConfirmarEliminar')).show();
+        }
+    });
+    
+    // Event delegation para tabla de marcas
+    document.getElementById('tabla-marcas').addEventListener('click', function(e) {
+        const btnEditar = e.target.closest('.btn-editar-marca');
+        const btnEliminar = e.target.closest('.btn-eliminar-marca');
+        
+        if (btnEditar) {
+            const id = parseInt(btnEditar.dataset.id);
+            editarMarca(id);
+        } else if (btnEliminar) {
+            const id = parseInt(btnEliminar.dataset.id);
+            itemAEliminar = { tipo: 'marca', id: id };
+            document.getElementById('mensaje-confirmacion').textContent = '¿Está seguro de eliminar esta marca?';
+            new bootstrap.Modal(document.getElementById('modalConfirmarEliminar')).show();
+        }
+    });
+    
+    // Confirmar eliminación
+    document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+        if (!itemAEliminar.tipo || !itemAEliminar.id) return;
+        
+        let url = '';
+        let callback = null;
+        
+        switch(itemAEliminar.tipo) {
+            case 'tipo':
+                url = `/api/catalogo/tipos/${itemAEliminar.id}`;
+                callback = cargarTipos;
+                break;
+            case 'capacidad':
+                url = `/api/catalogo/capacidades/${itemAEliminar.id}`;
+                callback = cargarCapacidades;
+                break;
+            case 'marca':
+                url = `/api/catalogo/marcas/${itemAEliminar.id}`;
+                callback = cargarMarcas;
+                break;
+        }
+        
+        if (url && callback) {
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminar'));
+            modal.hide();
+            
+            // Eliminar
+            fetch(url, {method: 'DELETE'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        callback();
+                        
+                        // Mostrar alerta de éxito
+                        const mainAlert = document.createElement('div');
+                        mainAlert.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                        mainAlert.style.zIndex = '9999';
+                        mainAlert.innerHTML = `
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            <strong>¡Eliminado!</strong> Elemento eliminado correctamente
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        `;
+                        document.body.appendChild(mainAlert);
+                        setTimeout(() => mainAlert.remove(), 3000);
+                    }
+                })
+                .finally(() => {
+                    itemAEliminar = { tipo: null, id: null };
+                });
+        }
+    });
+    
+    // Sincronizar selector de color con input de texto
+    document.getElementById('tipo-color').addEventListener('input', function(e) {
+        document.getElementById('tipo-color-hex').value = e.target.value.toUpperCase();
+    });
+    
+    document.getElementById('tipo-color-hex').addEventListener('input', function(e) {
+        const valor = e.target.value;
+        // Validar formato hexadecimal
+        if (/^#[0-9A-F]{6}$/i.test(valor)) {
+            document.getElementById('tipo-color').value = valor;
+        }
+    });
+    
+    // Cargar datos iniciales
+    cargarTipos();
+    cargarCapacidades();
+    cargarMarcas();
+</script>
+{% endblock %}

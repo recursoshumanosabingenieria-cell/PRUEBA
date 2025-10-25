@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema de Extintores{% endblock %}
+
+{% block extra_head %}
+<!-- Socket.IO para sincronización en tiempo real -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+    <div class="text-muted">
+        <i class="bi bi-calendar3"></i> <span id="fecha-actual"></span>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="bi bi-people text-primary"></i>
+            <h3 id="total-clientes">0</h3>
+            <p>Clientes Activos</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="bi bi-fire-extinguisher text-info"></i>
+            <h3 id="total-extintores">0</h3>
+            <p>Extintores Registrados</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="bi bi-exclamation-triangle text-warning"></i>
+            <h3 id="extintores-proximos">0</h3>
+            <p>Próximos a Vencer</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="bi bi-x-circle text-danger"></i>
+            <h3 id="extintores-vencidos">0</h3>
+            <p>Vencidos</p>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="stat-card">
+            <i class="bi bi-tools text-success"></i>
+            <h3 id="mantenimientos-mes">0</h3>
+            <p>Mantenimientos Este Mes</p>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stat-card">
+            <i class="bi bi-currency-dollar text-success"></i>
+            <h3 id="ingresos-mes">$0</h3>
+            <p>Ingresos del Mes</p>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bell"></i> Alertas y Notificaciones
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#vencidos">
+                            <span class="badge bg-danger" id="badge-vencidos">0</span> Vencidos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#proximos-7">
+                            <span class="badge bg-warning" id="badge-proximos-7">0</span> Próximos 7 días
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#proximos-30">
+                            <span class="badge bg-info" id="badge-proximos-30">0</span> Próximos 30 días
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-3">
+                    <div id="vencidos" class="tab-pane fade show active">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Cliente</th>
+                                        <th>Fecha Vencimiento</th>
+                                        <th>Días Vencido</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-vencidos"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="proximos-7" class="tab-pane fade">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Cliente</th>
+                                        <th>Fecha Vencimiento</th>
+                                        <th>Días Restantes</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-proximos-7"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="proximos-30" class="tab-pane fade">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Cliente</th>
+                                        <th>Fecha Vencimiento</th>
+                                        <th>Días Restantes</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-proximos-30"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ========== SINCRONIZACIÓN EN TIEMPO REAL ==========
+    let socket = null;
+    let socketConectado = false;
+    
+    function inicializarSocketIO() {
+        try {
+            socket = io({
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionAttempts: 5
+            });
+            
+            socket.on('connect', function() {
+                socketConectado = true;
+                console.log('[SYNC] ✅ Conectado al servidor en tiempo real');
+            });
+            
+            socket.on('disconnect', function() {
+                socketConectado = false;
+                console.log('[SYNC] ❌ Desconectado del servidor');
+            });
+            
+            // Escuchar cambios en órdenes
+            socket.on('cambio_orden', function(evento) {
+                console.log('[SYNC] 🔄 Cambio detectado:', evento.tipo);
+                // Recargar dashboard
+                cargarDashboard();
+                cargarAlertas();
+            });
+            
+            socket.on('connect_error', function(error) {
+                console.error('[SYNC] ❌ Error de conexión:', error);
+            });
+            
+        } catch (error) {
+            console.error('[SYNC] ❌ Error al inicializar Socket.IO:', error);
+        }
+    }
+    
+    // Mostrar fecha actual
+    const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('fecha-actual').textContent = new Date().toLocaleDateString('es-ES', opciones);
+    
+    // Cargar datos del dashboard
+    function cargarDashboard() {
+        fetch('/api/dashboard')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total-clientes').textContent = data.total_clientes;
+                document.getElementById('total-extintores').textContent = data.total_extintores;
+                document.getElementById('extintores-proximos').textContent = data.extintores_proximos;
+                document.getElementById('extintores-vencidos').textContent = data.extintores_vencidos;
+                document.getElementById('mantenimientos-mes').textContent = data.mantenimientos_mes;
+                document.getElementById('ingresos-mes').textContent = '$' + data.ingresos_mes.toLocaleString('es-MX', {minimumFractionDigits: 2});
+            });
+    }
+    
+    // Cargar alertas
+    function cargarAlertas() {
+        fetch('/api/alertas')
+            .then(response => response.json())
+            .then(data => {
+                // Actualizar badges
+                document.getElementById('badge-vencidos').textContent = data.vencidos.length;
+                document.getElementById('badge-proximos-7').textContent = data.proximos_7.length;
+                document.getElementById('badge-proximos-30').textContent = data.proximos_30.length;
+                
+                // Llenar tablas
+                llenarTablaAlertas('tabla-vencidos', data.vencidos, true);
+                llenarTablaAlertas('tabla-proximos-7', data.proximos_7, false);
+                llenarTablaAlertas('tabla-proximos-30', data.proximos_30, false);
+            });
+    }
+    
+    function llenarTablaAlertas(tablaId, datos, esVencido) {
+        const tabla = document.getElementById(tablaId);
+        tabla.innerHTML = '';
+        
+        if (datos.length === 0) {
+            tabla.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay alertas</td></tr>';
+            return;
+        }
+        
+        datos.forEach(item => {
+            const fila = `
+                <tr>
+                    <td><strong>${item.serie}</strong></td>
+                    <td>${item.cliente}</td>
+                    <td>${item.fecha}</td>
+                    <td>
+                        <span class="badge ${esVencido ? 'bg-danger' : 'bg-warning'}">
+                            ${item.dias} ${esVencido ? 'días vencido' : 'días restantes'}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="/mantenimientos" class="btn btn-sm btn-primary">
+                            <i class="bi bi-tools"></i> Programar
+                        </a>
+                    </td>
+                </tr>
+            `;
+            tabla.innerHTML += fila;
+        });
+    }
+    
+    // Cargar datos al iniciar
+    inicializarSocketIO();
+    cargarDashboard();
+    cargarAlertas();
+    
+    // Polling de respaldo: actualizar cada 10 segundos si no hay conexión
+    setInterval(() => {
+        if (!socketConectado) {
+            console.log('[POLLING] Recargando dashboard...');
+            cargarDashboard();
+            cargarAlertas();
+        }
+    }, 10000);
+</script>
+{% endblock %}

@@ -1,0 +1,523 @@
+{% extends "base.html" %}
+
+{% block title %}Logs del Sistema - Sistema de Extintores{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-terminal"></i> Logs del Sistema</h1>
+    <div>
+        <button class="btn btn-success" onclick="cargarLogs()">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+        <button class="btn btn-danger" onclick="limpiarLogs()">
+            <i class="bi bi-trash"></i> Limpiar
+        </button>
+    </div>
+</div>
+
+<!-- Gestión de Servidores -->
+<div class="card mb-3">
+    <div class="card-header bg-primary text-white">
+        <i class="bi bi-server"></i> Servidores Python Activos
+        <button class="btn btn-sm btn-light float-end" onclick="cargarServidores()">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="listaServidores">
+            <div class="text-center text-muted py-3">
+                <i class="bi bi-hourglass-split"></i> Cargando servidores...
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <label class="form-label">Filtrar por tipo:</label>
+        <select class="form-select" id="filtroTipo" onchange="filtrarLogs()">
+            <option value="">Todos</option>
+            <option value="INFO">INFO</option>
+            <option value="WARNING">WARNING</option>
+            <option value="ERROR">ERROR</option>
+            <option value="DEBUG">DEBUG</option>
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Buscar:</label>
+        <input type="text" class="form-control" id="buscarLog" placeholder="Buscar en logs..." onkeyup="filtrarLogs()">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Últimas líneas:</label>
+        <select class="form-select" id="cantidadLineas" onchange="cargarLogs()">
+            <option value="50">50 líneas</option>
+            <option value="100" selected>100 líneas</option>
+            <option value="200">200 líneas</option>
+            <option value="500">500 líneas</option>
+            <option value="1000">1000 líneas</option>
+        </select>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-dark text-white">
+        <i class="bi bi-file-text"></i> Logs en Tiempo Real
+        <span class="badge bg-success float-end" id="estadoLogs">Conectado</span>
+    </div>
+    <div class="card-body p-0">
+        <div id="contenedorLogs" style="background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', monospace; font-size: 13px; height: 600px; overflow-y: auto; padding: 15px;">
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
+                <p class="mt-3">Cargando logs...</p>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer text-muted">
+        <small>
+            <i class="bi bi-info-circle"></i> 
+            Los logs se actualizan automáticamente cada 3 segundos. 
+            Total de líneas: <strong id="totalLineas">0</strong>
+        </small>
+    </div>
+</div>
+
+<style>
+.log-line {
+    padding: 3px 0;
+    border-bottom: 1px solid #333;
+    word-wrap: break-word;
+}
+
+.log-INFO { color: #4ec9b0; }
+.log-WARNING { color: #dcdcaa; }
+.log-ERROR { color: #f48771; }
+.log-DEBUG { color: #9cdcfe; }
+.log-timestamp { color: #858585; }
+</style>
+
+<script>
+let todosLogs = [];
+let intervaloActualizacion = null;
+
+function cargarLogs() {
+    const cantidad = document.getElementById('cantidadLineas').value;
+    
+    fetch(`/api/logs?cantidad=${cantidad}`)
+        .then(response => response.json())
+        .then(data => {
+            todosLogs = data.logs || [];
+            document.getElementById('totalLineas').textContent = todosLogs.length;
+            filtrarLogs();
+            document.getElementById('estadoLogs').textContent = 'Conectado';
+            document.getElementById('estadoLogs').className = 'badge bg-success float-end';
+        })
+        .catch(error => {
+            console.error('Error al cargar logs:', error);
+            document.getElementById('estadoLogs').textContent = 'Error';
+            document.getElementById('estadoLogs').className = 'badge bg-danger float-end';
+        });
+}
+
+function filtrarLogs() {
+    const filtroTipo = document.getElementById('filtroTipo').value;
+    const busqueda = document.getElementById('buscarLog').value.toLowerCase();
+    
+    let logsFiltrados = todosLogs;
+    
+    // Filtrar por tipo
+    if (filtroTipo) {
+        logsFiltrados = logsFiltrados.filter(log => log.includes(`[${filtroTipo}]`));
+    }
+    
+    // Filtrar por búsqueda
+    if (busqueda) {
+        logsFiltrados = logsFiltrados.filter(log => log.toLowerCase().includes(busqueda));
+    }
+    
+    mostrarLogs(logsFiltrados);
+}
+
+function mostrarLogs(logs) {
+    const contenedor = document.getElementById('contenedorLogs');
+    
+    if (logs.length === 0) {
+        contenedor.innerHTML = `
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                <p class="mt-3">No hay logs disponibles</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    logs.forEach((log, index) => {
+        // Detectar tipo de log
+        let clase = '';
+        if (log.includes('[INFO]')) clase = 'log-INFO';
+        else if (log.includes('[WARNING]')) clase = 'log-WARNING';
+        else if (log.includes('[ERROR]')) clase = 'log-ERROR';
+        else if (log.includes('[DEBUG]')) clase = 'log-DEBUG';
+        
+        // Resaltar timestamps
+        log = log.replace(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/g, '<span class="log-timestamp">$1</span>');
+        
+        html += `<div class="log-line ${clase}">${log}</div>`;
+    });
+    
+    contenedor.innerHTML = html;
+    
+    // Auto-scroll al final
+    contenedor.scrollTop = contenedor.scrollHeight;
+}
+
+function limpiarLogs() {
+    // Usar modal de confirmación
+    const modalHtml = `
+        <div class="modal fade" id="modalConfirmarLimpiar" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Confirmar Limpieza
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">¿Está seguro de limpiar todos los logs?</p>
+                        <p class="text-muted small mb-0">Esta acción no se puede deshacer.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" onclick="confirmarLimpiarLogs()">
+                            <i class="bi bi-trash"></i> Limpiar Logs
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al body si no existe
+    if (!document.getElementById('modalConfirmarLimpiar')) {
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmarLimpiar'));
+    modal.show();
+}
+
+function confirmarLimpiarLogs() {
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarLimpiar'));
+    modal.hide();
+    
+    // Limpiar logs
+    fetch('/api/logs/limpiar', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarNotificacion('Logs limpiados exitosamente', 'success');
+                cargarLogs();
+            } else {
+                mostrarNotificacion('Error al limpiar logs: ' + (data.error || 'Error desconocido'), 'error');
+            }
+        })
+        .catch(error => {
+            mostrarNotificacion('Error al limpiar logs: ' + error, 'error');
+        });
+}
+
+function mostrarNotificacion(mensaje, tipo) {
+    const tipoConfig = {
+        'success': { bg: 'bg-success', icon: 'bi-check-circle-fill', titulo: 'Éxito' },
+        'error': { bg: 'bg-danger', icon: 'bi-x-circle-fill', titulo: 'Error' },
+        'warning': { bg: 'bg-warning', icon: 'bi-exclamation-triangle-fill', titulo: 'Advertencia' },
+        'info': { bg: 'bg-info', icon: 'bi-info-circle-fill', titulo: 'Información' }
+    };
+    
+    const config = tipoConfig[tipo] || tipoConfig['info'];
+    
+    const modalHtml = `
+        <div class="modal fade" id="modalNotificacion" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header ${config.bg} text-white">
+                        <h5 class="modal-title">
+                            <i class="bi ${config.icon}"></i> ${config.titulo}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">${mensaje}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Eliminar modal anterior si existe
+    const modalAnterior = document.getElementById('modalNotificacion');
+    if (modalAnterior) {
+        modalAnterior.remove();
+    }
+    
+    // Agregar nuevo modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalNotificacion'));
+    modal.show();
+    
+    // Auto-cerrar después de 3 segundos para notificaciones de éxito
+    if (tipo === 'success') {
+        setTimeout(() => {
+            modal.hide();
+        }, 3000);
+    }
+}
+
+// ========== GESTIÓN DE SERVIDORES ==========
+function cargarServidores() {
+    fetch('/api/servidores')
+        .then(response => response.json())
+        .then(data => {
+            mostrarServidores(data.servidores || []);
+        })
+        .catch(error => {
+            console.error('Error al cargar servidores:', error);
+            document.getElementById('listaServidores').innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Error al cargar servidores
+                </div>
+            `;
+        });
+}
+
+function mostrarServidores(servidores) {
+    const contenedor = document.getElementById('listaServidores');
+    
+    console.log('🖥️ Servidores recibidos:', servidores);
+    
+    if (servidores.length === 0) {
+        contenedor.innerHTML = `
+            <div class="alert alert-success mb-0">
+                <i class="bi bi-check-circle"></i> No hay servidores Python activos
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="table-responsive"><table class="table table-hover mb-0">';
+    html += '<thead><tr>';
+    html += '<th style="width: 100px;">PID</th>';
+    html += '<th style="width: 300px;">URL Completa</th>';
+    html += '<th style="width: 120px;">Tiempo Activo</th>';
+    html += '<th style="width: 200px;">Acciones</th>';
+    html += '</tr></thead><tbody>';
+    
+    servidores.forEach(servidor => {
+        const esteServidor = servidor.es_este_servidor;
+        const rowClass = esteServidor ? 'table-success' : '';
+        const badge = esteServidor ? '<span class="badge bg-success ms-2">Actual</span>' : '';
+        
+        console.log(`Servidor PID ${servidor.pid}: es_este_servidor = ${esteServidor}`);
+        
+        html += `<tr class="${rowClass}">`;
+        html += `<td><strong>${servidor.pid}</strong>${badge}</td>`;
+        html += `<td>`;
+        if (servidor.puerto) {
+            const url = `http://127.0.0.1:${servidor.puerto}`;
+            html += `<a href="${url}" target="_blank" class="text-decoration-none">
+                        <i class="bi bi-box-arrow-up-right"></i> ${url}
+                     </a>`;
+        } else {
+            html += '<span class="text-muted">No disponible</span>';
+        }
+        html += `</td>`;
+        html += `<td>${servidor.tiempo_activo}</td>`;
+        html += `<td>`;
+        
+        // Siempre mostrar botón detener para servidores no actuales
+        if (esteServidor) {
+            // Este es el servidor actual - solo reiniciar
+            html += `<button class="btn btn-sm btn-warning" onclick="reiniciarServidor()" title="Reiniciar servidor actual">
+                        <i class="bi bi-arrow-clockwise"></i> Reiniciar
+                     </button>`;
+        } else {
+            // Servidor viejo - solo detener
+            html += `<button class="btn btn-sm btn-danger" onclick="detenerServidor(${servidor.pid})" title="Detener servidor viejo">
+                        <i class="bi bi-stop-circle"></i> Detener
+                     </button>`;
+        }
+        
+        html += `</td></tr>`;
+    });
+    
+    html += '</tbody></table></div>';
+    
+    // Agregar botón para detener todos
+    if (servidores.length > 1) {
+        html += `
+            <div class="mt-3 text-center">
+                <button class="btn btn-danger" onclick="detenerTodosServidores()">
+                    <i class="bi bi-stop-circle-fill"></i> Detener Todos los Servidores
+                </button>
+            </div>
+        `;
+    }
+    
+    contenedor.innerHTML = html;
+}
+
+function detenerServidor(pid) {
+    const modalHtml = `
+        <div class="modal fade" id="modalConfirmarDetener" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Confirmar Detención
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">¿Está seguro de detener el servidor con PID ${pid}?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" onclick="confirmarDetenerServidor(${pid})">
+                            <i class="bi bi-stop-circle"></i> Detener
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    if (!document.getElementById('modalConfirmarDetener')) {
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmarDetener'));
+    modal.show();
+}
+
+function confirmarDetenerServidor(pid) {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarDetener'));
+    modal.hide();
+    
+    fetch('/api/servidores/detener', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pid: pid })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarNotificacion('Servidor detenido exitosamente', 'success');
+            setTimeout(cargarServidores, 1000);
+        } else {
+            mostrarNotificacion('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    })
+    .catch(error => {
+        mostrarNotificacion('Error al detener servidor: ' + error, 'error');
+    });
+}
+
+function detenerTodosServidores() {
+    const modalHtml = `
+        <div class="modal fade" id="modalConfirmarDetenerTodos" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Confirmar Detención Masiva
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">¿Está seguro de detener TODOS los servidores Python?</p>
+                        <p class="text-muted small mb-0">Esto cerrará esta aplicación.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" onclick="confirmarDetenerTodos()">
+                            <i class="bi bi-stop-circle-fill"></i> Detener Todos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    if (!document.getElementById('modalConfirmarDetenerTodos')) {
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmarDetenerTodos'));
+    modal.show();
+}
+
+function confirmarDetenerTodos() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarDetenerTodos'));
+    modal.hide();
+    
+    fetch('/api/servidores/detener-todos', { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarNotificacion('Todos los servidores han sido detenidos', 'success');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        // Es normal que falle porque el servidor se cerró
+        mostrarNotificacion('Servidores detenidos', 'success');
+    });
+}
+
+function reiniciarServidor() {
+    mostrarNotificacion('Reiniciando servidor...', 'info');
+    
+    fetch('/api/servidores/reiniciar', { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarNotificacion('Servidor reiniciando... Recarga la página en 5 segundos', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 5000);
+        }
+    })
+    .catch(error => {
+        // Es normal que falle porque el servidor se reinició
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000);
+    });
+}
+
+// Cargar logs y servidores al inicio
+cargarLogs();
+cargarServidores();
+
+// Actualizar automáticamente cada 3 segundos
+intervaloActualizacion = setInterval(cargarLogs, 3000);
+setInterval(cargarServidores, 5000); // Actualizar servidores cada 5 segundos
+
+// Limpiar intervalo al salir de la página
+window.addEventListener('beforeunload', function() {
+    if (intervaloActualizacion) {
+        clearInterval(intervaloActualizacion);
+    }
+});
+</script>
+{% endblock %}
