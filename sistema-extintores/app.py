@@ -2536,6 +2536,52 @@ def api_reiniciar_servidor():
 # Inicializar base de datos
 with app.app_context():
     db.create_all()
+    
+    # Poblar catálogo si está vacío (para producción)
+    if TipoExtintor.query.count() == 0:
+        print("📦 Poblando catálogo inicial...")
+        
+        # Tipos de extintores
+        tipos = [
+            {'nombre': 'PQS', 'nombre_completo': 'Polvo Químico Seco', 'clase_fuego': 'ABC', 'color': '#dc3545'},
+            {'nombre': 'CO2', 'nombre_completo': 'Dióxido de Carbono', 'clase_fuego': 'BC', 'color': '#000000'},
+            {'nombre': 'H2O Pres.', 'nombre_completo': 'Agua Presurizada', 'clase_fuego': 'A', 'color': '#0d6efd'},
+            {'nombre': 'H2O Desm.', 'nombre_completo': 'Agua Desmineralizada', 'clase_fuego': 'A', 'color': '#17a2b8'},
+            {'nombre': 'AFFF', 'nombre_completo': 'Espuma Formadora de Película Acuosa', 'clase_fuego': 'AB', 'color': '#28a745'},
+            {'nombre': 'Acetato de Potasio', 'nombre_completo': 'Acetato de Potasio', 'clase_fuego': 'K', 'color': '#6f42c1'},
+            {'nombre': 'Halotron', 'nombre_completo': 'Halotron I', 'clase_fuego': 'ABC', 'color': '#fd7e14'}
+        ]
+        
+        for tipo_data in tipos:
+            tipo = TipoExtintor(**tipo_data)
+            db.session.add(tipo)
+        
+        # Capacidades
+        capacidades = [
+            {'valor': 1, 'unidad': 'kg'}, {'valor': 2, 'unidad': 'kg'}, {'valor': 4, 'unidad': 'kg'},
+            {'valor': 6, 'unidad': 'kg'}, {'valor': 9, 'unidad': 'kg'}, {'valor': 12, 'unidad': 'kg'},
+            {'valor': 2.5, 'unidad': 'gal'}, {'valor': 10, 'unidad': 'lb'}, {'valor': 20, 'unidad': 'lb'}
+        ]
+        
+        for cap_data in capacidades:
+            cap = CapacidadExtintor(**cap_data)
+            db.session.add(cap)
+        
+        # Marcas
+        marcas = [
+            {'nombre': 'FIREX', 'origen': 'Nacional'},
+            {'nombre': 'SOLKAFLAM', 'origen': 'Nacional'},
+            {'nombre': 'AMEREX', 'origen': 'Americano'},
+            {'nombre': 'BADGER', 'origen': 'Americano'},
+            {'nombre': 'ANSUL', 'origen': 'Americano'}
+        ]
+        
+        for marca_data in marcas:
+            marca = MarcaExtintor(**marca_data)
+            db.session.add(marca)
+        
+        db.session.commit()
+        print("✅ Catálogo poblado correctamente")
 
 if __name__ == '__main__':
     import sys
