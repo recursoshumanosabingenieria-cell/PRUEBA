@@ -28,4 +28,5 @@ pyOpenSSL==24.0.0
 
 # Servidor WSGI para producción
 gunicorn==21.2.0
-eventlet==0.33.3
+eventlet==0.35.2
+greenlet==3.0.3
