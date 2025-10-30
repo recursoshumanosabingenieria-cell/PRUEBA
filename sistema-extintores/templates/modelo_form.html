@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}{% if modelo %}Editar{% else %}Nuevo{% endif %} Modelo - {{ producto.nombre }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('productos') }}">Productos</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('ver_producto', id=producto.id) }}">{{ producto.nombre }}</a></li>
+            <li class="breadcrumb-item active">{% if modelo %}Editar Modelo{% else %}Nuevo Modelo{% endif %}</li>
+        </ol>
+    </nav>
+    <h1>
+        <i class="bi bi-box-seam"></i> 
+        {% if modelo %}Editar Modelo{% else %}Nuevo Modelo{% endif %}
+    </h1>
+    <p class="text-muted">Producto: <strong>{{ producto.nombre }}</strong> ({{ producto.codigo }})</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="modeloForm">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Nombre del Modelo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="nombre_modelo" 
+                                   value="{{ modelo.nombre_modelo if modelo else '' }}" required
+                                   placeholder="Ej: iPhone 15 Pro, Taladro 500W, Casco Talla L">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Código del Modelo</label>
+                            <input type="text" class="form-control" name="codigo_modelo" 
+                                   value="{{ modelo.codigo_modelo if modelo else '' }}"
+                                   placeholder="Opcional">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="2">{{ modelo.descripcion if modelo else '' }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        {% if not modelo %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Stock Inicial</label>
+                            <input type="number" step="0.01" class="form-control" name="stock_actual" value="0">
+                            <small class="text-muted">Cantidad inicial de este modelo</small>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Precio Diferencial</label>
+                            <div class="input-group">
+                                <span class="input-group-text">S/</span>
+                                <input type="number" step="0.01" class="form-control" name="precio_diferencial" 
+                                       value="{{ modelo.precio_diferencial if modelo else '0' }}">
+                            </div>
+                            <small class="text-muted">
+                                Diferencia respecto al precio base (S/ {{ "%.2f"|format(producto.precio_unitario) }})
+                                {% if modelo %}
+                                <br>Precio final: <strong>S/ {{ "%.2f"|format(modelo.precio_final) }}</strong>
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    {% if producto.tiene_colores %}
+                    <!-- Gestión de Colores -->
+                    <div class="card mb-3 bg-light">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-palette"></i> Colores Disponibles</span>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="agregarColor()">
+                                <i class="bi bi-plus"></i> Agregar Color
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="coloresContainer">
+                                {% if modelo and modelo.colores %}
+                                    {% for color in modelo.colores %}
+                                    <div class="row mb-2 color-item">
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Nombre del color" value="{{ color.nombre_color }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Código (ej: #FF0000)" value="{{ color.codigo_color }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="number" step="0.01" class="form-control form-control-sm" placeholder="Stock" value="{{ color.stock_actual }}">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="eliminarColor(this)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <p class="text-muted mb-0"><small>No hay colores agregados. Haz clic en "Agregar Color" para incluir variantes de color.</small></p>
+                                {% endif %}
+                            </div>
+                            <input type="hidden" name="colores_data" id="coloresData">
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{{ url_for('ver_producto', id=producto.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> {% if modelo %}Actualizar{% else %}Guardar{% endif %} Modelo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información
+            </div>
+            <div class="card-body">
+                <h6>Producto Base</h6>
+                <ul class="small">
+                    <li><strong>Nombre:</strong> {{ producto.nombre }}</li>
+                    <li><strong>Código:</strong> {{ producto.codigo }}</li>
+                    <li><strong>Precio Base:</strong> S/ {{ "%.2f"|format(producto.precio_unitario) }}</li>
+                    <li><strong>Unidad:</strong> {{ producto.unidad_medida }}</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Precio Diferencial</h6>
+                <p class="small">
+                    Ingresa un valor positivo si este modelo es más caro que el precio base, 
+                    o negativo si es más barato.
+                </p>
+                <p class="small">
+                    <strong>Ejemplo:</strong><br>
+                    Precio base: S/ 100.00<br>
+                    Diferencial: +20.00<br>
+                    Precio final: S/ 120.00
+                </p>
+                
+                {% if producto.tiene_colores %}
+                <hr>
+                
+                <h6>Colores</h6>
+                <p class="small">
+                    Agrega los colores disponibles para este modelo. 
+                    Cada color puede tener su propio stock independiente.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+{% if producto.tiene_colores %}
+// Gestión de colores
+function agregarColor() {
+    const container = document.getElementById('coloresContainer');
+    
+    // Eliminar mensaje de "no hay colores" si existe
+    const mensajeVacio = container.querySelector('p.text-muted');
+    if (mensajeVacio) {
+        mensajeVacio.remove();
+    }
+    
+    const div = document.createElement('div');
+    div.className = 'row mb-2 color-item';
+    div.innerHTML = `
+        <div class="col-md-4">
+            <input type="text" class="form-control form-control-sm" placeholder="Nombre del color">
+        </div>
+        <div class="col-md-3">
+            <input type="text" class="form-control form-control-sm" placeholder="Código (ej: #FF0000)">
+        </div>
+        <div class="col-md-3">
+            <input type="number" step="0.01" class="form-control form-control-sm" placeholder="Stock" value="0">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-danger" onclick="eliminarColor(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function eliminarColor(btn) {
+    const item = btn.closest('.color-item');
+    item.remove();
+    
+    // Si no quedan colores, mostrar mensaje
+    const container = document.getElementById('coloresContainer');
+    if (container.querySelectorAll('.color-item').length === 0) {
+        container.innerHTML = '<p class="text-muted mb-0"><small>No hay colores agregados. Haz clic en "Agregar Color" para incluir variantes de color.</small></p>';
+    }
+}
+
+// Serializar colores antes de enviar el formulario
+document.getElementById('modeloForm').addEventListener('submit', function(e) {
+    const colores = [];
+    document.querySelectorAll('.color-item').forEach(item => {
+        const inputs = item.querySelectorAll('input');
+        const nombre = inputs[0].value.trim();
+        const codigo = inputs[1].value.trim();
+        const stock = inputs[2].value;
+        if (nombre) {
+            colores.push({ nombre, codigo, stock });
+        }
+    });
+    document.getElementById('coloresData').value = JSON.stringify(colores);
+});
+{% endif %}
+</script>
+{% endblock %}

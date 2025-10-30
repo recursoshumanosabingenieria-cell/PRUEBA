@@ -64,6 +64,38 @@
                         <textarea class="form-control" name="descripcion" rows="3">{{ producto.descripcion if producto else '' }}</textarea>
                     </div>
                     
+                    <!-- Opciones de Modelos y Colores -->
+                    <div class="card mb-3 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="bi bi-gear"></i> Configuración de Variantes</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="tieneModelos" name="tiene_modelos"
+                                               {% if producto and producto.tiene_modelos %}checked{% endif %}>
+                                        <label class="form-check-label" for="tieneModelos">
+                                            <strong>Este producto tiene modelos</strong>
+                                            <br><small class="text-muted">Ej: iPhone 13, iPhone 14, iPhone 15</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="tieneColores" name="tiene_colores"
+                                               {% if producto and producto.tiene_colores %}checked{% endif %}>
+                                        <label class="form-check-label" for="tieneColores">
+                                            <strong>Este producto tiene colores</strong>
+                                            <br><small class="text-muted">Ej: Rojo, Azul, Negro</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0" role="alert">
+                                <i class="bi bi-info-circle"></i> <strong>Nota:</strong> Podrás agregar modelos y colores después de crear el producto si activas estas opciones.
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Unidad de Medida <span class="text-danger">*</span></label>
@@ -100,17 +132,51 @@
                     {% if not producto %}
                     <div class="mb-3">
                         <label class="form-label">Stock Inicial</label>
-                        <input type="number" step="0.01" class="form-control" name="stock_actual" value="0">
-                        <small class="text-muted">Cantidad inicial en inventario</small>
+                        <input type="number" step="0.01" class="form-control" name="stock_actual" value="0" id="stockInicial">
+                        <small class="text-muted">Cantidad inicial en inventario (solo si no tiene modelos/colores)</small>
                     </div>
                     {% endif %}
                     
-                    <div class="d-flex justify-content-between">
+                    <!-- Características Personalizadas -->
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-tags"></i> Características Adicionales</span>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="agregarCaracteristica()">
+                                <i class="bi bi-plus"></i> Agregar
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="caracteristicasContainer">
+                                {% if producto and producto.caracteristicas %}
+                                    {% for caract in producto.caracteristicas %}
+                                    <div class="row mb-2 caracteristica-item">
+                                        <div class="col-md-5">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Nombre (ej: Talla, Material)" value="{{ caract.nombre }}">
+                                        </div>
+                                        <div class="col-md-5">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Valor (ej: XL, Acero)" value="{{ caract.valor }}">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="eliminarCaracteristica(this)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <p class="text-muted mb-0"><small>No hay características agregadas. Haz clic en "Agregar" para incluir características como talla, material, voltaje, etc.</small></p>
+                                {% endif %}
+                            </div>
+                            <input type="hidden" name="caracteristicas_data" id="caracteristicasData">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-3">
                         <a href="{{ url_for('productos') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save"></i> Guardar Producto
+                            <i class="bi bi-save"></i> {% if producto %}Actualizar{% else %}Guardar{% endif %} Producto
                         </button>
                     </div>
                 </form>
@@ -132,6 +198,15 @@
                     <li>Unidad de medida</li>
                     <li>Stock mínimo</li>
                     <li>Precio unitario</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Modelos y Colores</h6>
+                <ul class="small">
+                    <li><strong>Tiene Modelos:</strong> Activa si el producto tiene diferentes modelos (ej: versiones, tamaños)</li>
+                    <li><strong>Tiene Colores:</strong> Activa si cada modelo viene en diferentes colores</li>
+                    <li>Podrás gestionar modelos y colores después de crear el producto</li>
                 </ul>
                 
                 <hr>
@@ -197,11 +272,76 @@ function generarCodigo() {
     {% endif %}
 }
 
+// Gestión de características
+function agregarCaracteristica() {
+    const container = document.getElementById('caracteristicasContainer');
+    
+    // Eliminar mensaje de "no hay características" si existe
+    const mensajeVacio = container.querySelector('p.text-muted');
+    if (mensajeVacio) {
+        mensajeVacio.remove();
+    }
+    
+    const div = document.createElement('div');
+    div.className = 'row mb-2 caracteristica-item';
+    div.innerHTML = `
+        <div class="col-md-5">
+            <input type="text" class="form-control form-control-sm" placeholder="Nombre (ej: Talla, Material)">
+        </div>
+        <div class="col-md-5">
+            <input type="text" class="form-control form-control-sm" placeholder="Valor (ej: XL, Acero)">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-danger" onclick="eliminarCaracteristica(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function eliminarCaracteristica(btn) {
+    const item = btn.closest('.caracteristica-item');
+    item.remove();
+    
+    // Si no quedan características, mostrar mensaje
+    const container = document.getElementById('caracteristicasContainer');
+    if (container.querySelectorAll('.caracteristica-item').length === 0) {
+        container.innerHTML = '<p class="text-muted mb-0"><small>No hay características agregadas. Haz clic en "Agregar" para incluir características como talla, material, voltaje, etc.</small></p>';
+    }
+}
+
+// Serializar características antes de enviar el formulario
+document.getElementById('productoForm').addEventListener('submit', function(e) {
+    const caracteristicas = [];
+    document.querySelectorAll('.caracteristica-item').forEach(item => {
+        const inputs = item.querySelectorAll('input');
+        const nombre = inputs[0].value.trim();
+        const valor = inputs[1].value.trim();
+        if (nombre && valor) {
+            caracteristicas.push({ nombre, valor });
+        }
+    });
+    document.getElementById('caracteristicasData').value = JSON.stringify(caracteristicas);
+});
+
 // Generar código al cargar si ya hay selecciones
 document.addEventListener('DOMContentLoaded', function() {
     {% if not producto %}
     generarCodigo();
     {% endif %}
+    
+    // Advertencia si se activa "tiene modelos" con stock inicial
+    const tieneModelosCheck = document.getElementById('tieneModelos');
+    const stockInicial = document.getElementById('stockInicial');
+    
+    if (tieneModelosCheck && stockInicial) {
+        tieneModelosCheck.addEventListener('change', function() {
+            if (this.checked && parseFloat(stockInicial.value) > 0) {
+                alert('Nota: Si el producto tiene modelos, el stock se gestionará por cada modelo individual. El stock inicial se ignorará.');
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

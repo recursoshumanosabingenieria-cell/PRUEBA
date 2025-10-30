@@ -56,6 +56,39 @@
                 <h6>Descripción</h6>
                 <p class="small">{{ producto.descripcion }}</p>
                 {% endif %}
+                
+                {% if producto.caracteristicas %}
+                <hr>
+                <h6><i class="bi bi-tags"></i> Características</h6>
+                <table class="table table-sm table-borderless">
+                    {% for caract in producto.caracteristicas %}
+                    <tr>
+                        <th class="small">{{ caract.nombre }}:</th>
+                        <td class="small">{{ caract.valor }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% endif %}
+                
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <small class="text-muted">Tiene Modelos:</small><br>
+                        {% if producto.tiene_modelos %}
+                        <span class="badge bg-success"><i class="bi bi-check"></i> Sí</span>
+                        {% else %}
+                        <span class="badge bg-secondary"><i class="bi bi-x"></i> No</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <small class="text-muted">Tiene Colores:</small><br>
+                        {% if producto.tiene_colores %}
+                        <span class="badge bg-success"><i class="bi bi-check"></i> Sí</span>
+                        {% else %}
+                        <span class="badge bg-secondary"><i class="bi bi-x"></i> No</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -80,6 +113,98 @@
     
     <!-- Stock y estadísticas -->
     <div class="col-md-8">
+        <!-- Modelos del Producto -->
+        {% if producto.tiene_modelos %}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-box-seam"></i> Modelos del Producto</span>
+                <a href="{{ url_for('nuevo_modelo', producto_id=producto.id) }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> Agregar Modelo
+                </a>
+            </div>
+            <div class="card-body">
+                {% if producto.modelos|selectattr('activo')|list %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>Modelo</th>
+                                <th>Código</th>
+                                {% if producto.tiene_colores %}
+                                <th>Colores</th>
+                                {% endif %}
+                                <th>Stock</th>
+                                <th>Precio</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for modelo in producto.modelos %}
+                            {% if modelo.activo %}
+                            <tr>
+                                <td><strong>{{ modelo.nombre_modelo }}</strong></td>
+                                <td><small>{{ modelo.codigo_modelo or '-' }}</small></td>
+                                {% if producto.tiene_colores %}
+                                <td>
+                                    {% if modelo.colores|selectattr('activo')|list %}
+                                    <small>
+                                        {% for color in modelo.colores %}
+                                        {% if color.activo %}
+                                        <span class="badge bg-secondary" style="{% if color.codigo_color %}background-color: {{ color.codigo_color }} !important;{% endif %}">
+                                            {{ color.nombre_color }} ({{ color.stock_actual }})
+                                        </span>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </small>
+                                    {% else %}
+                                    <small class="text-muted">Sin colores</small>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                                <td>
+                                    {% if producto.tiene_colores %}
+                                    <small class="text-muted">Ver colores</small>
+                                    {% else %}
+                                    <strong>{{ modelo.stock_actual }}</strong> {{ producto.unidad_medida }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>S/ {{ "%.2f"|format(modelo.precio_final) }}</strong>
+                                    {% if modelo.precio_diferencial != 0 %}
+                                    <br><small class="{% if modelo.precio_diferencial > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {% if modelo.precio_diferencial > 0 %}+{% endif %}{{ "%.2f"|format(modelo.precio_diferencial) }}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('editar_modelo', producto_id=producto.id, modelo_id=modelo.id) }}" class="btn btn-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-danger" onclick="confirmarEliminacionModelo({{ modelo.id }})" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-box-seam" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No hay modelos registrados</p>
+                    <a href="{{ url_for('nuevo_modelo', producto_id=producto.id) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-circle"></i> Agregar Primer Modelo
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
         <div class="row mb-3">
             <div class="col-md-4">
                 <div class="card stat-card">
@@ -199,4 +324,35 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de confirmación para eliminar modelo -->
+<div class="modal fade" id="modalEliminarModelo" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro que desea eliminar este modelo?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminarModelo" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarEliminacionModelo(modeloId) {
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminarModelo'));
+    document.getElementById('formEliminarModelo').action = `/productos/{{ producto.id }}/modelos/${modeloId}/eliminar`;
+    modal.show();
+}
+</script>
 {% endblock %}
