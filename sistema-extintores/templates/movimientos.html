@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Movimientos{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-arrow-left-right"></i> Movimientos de Inventario</h1>
+    <p class="text-muted">Historial de entradas, salidas y ajustes</p>
+</div>
+
+<!-- Acciones rápidas -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <a href="{{ url_for('entrada_stock') }}" class="btn btn-success w-100 btn-lg">
+            <i class="bi bi-plus-circle"></i> Registrar Entrada
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('salida_stock') }}" class="btn btn-danger w-100 btn-lg">
+            <i class="bi bi-dash-circle"></i> Registrar Salida
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('ajuste_stock') }}" class="btn btn-warning w-100 btn-lg">
+            <i class="bi bi-gear"></i> Ajustar Stock
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Tipo de Movimiento</label>
+                <select class="form-select" name="tipo" onchange="this.form.submit()">
+                    <option value="">Todos los movimientos</option>
+                    <option value="entrada" {% if tipo_seleccionado == 'entrada' %}selected{% endif %}>Entradas</option>
+                    <option value="salida" {% if tipo_seleccionado == 'salida' %}selected{% endif %}>Salidas</option>
+                    <option value="ajuste" {% if tipo_seleccionado == 'ajuste' %}selected{% endif %}>Ajustes</option>
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <a href="{{ url_for('movimientos') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Limpiar Filtros
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de movimientos -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-list"></i> Historial de Movimientos ({{ movimientos.total }} registros)
+    </div>
+    <div class="card-body">
+        {% if movimientos.items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Stock Anterior</th>
+                        <th>Stock Nuevo</th>
+                        <th>Usuario</th>
+                        <th>Motivo</th>
+                        <th>Documento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mov in movimientos.items %}
+                    <tr>
+                        <td>
+                            <strong>{{ mov.fecha_movimiento.strftime('%d/%m/%Y') }}</strong><br>
+                            <small class="text-muted">{{ mov.fecha_movimiento.strftime('%H:%M') }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ mov.producto.nombre }}</strong><br>
+                            <small class="text-muted">{{ mov.producto.codigo }}</small>
+                        </td>
+                        <td>
+                            {% if mov.tipo_movimiento == 'entrada' %}
+                            <span class="badge bg-success"><i class="bi bi-arrow-down"></i> Entrada</span>
+                            {% elif mov.tipo_movimiento == 'salida' %}
+                            <span class="badge bg-danger"><i class="bi bi-arrow-up"></i> Salida</span>
+                            {% else %}
+                            <span class="badge bg-warning"><i class="bi bi-gear"></i> Ajuste</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if mov.tipo_movimiento == 'entrada' %}
+                            <span class="text-success fw-bold">+{{ mov.cantidad }}</span>
+                            {% elif mov.tipo_movimiento == 'salida' %}
+                            <span class="text-danger fw-bold">-{{ mov.cantidad }}</span>
+                            {% else %}
+                            <span class="fw-bold">{{ mov.cantidad }}</span>
+                            {% endif %}
+                            {{ mov.producto.unidad_medida }}
+                        </td>
+                        <td>{{ mov.stock_anterior }} {{ mov.producto.unidad_medida }}</td>
+                        <td><strong>{{ mov.stock_nuevo }} {{ mov.producto.unidad_medida }}</strong></td>
+                        <td>
+                            <small>{{ mov.usuario.nombre_completo }}</small>
+                        </td>
+                        <td><small>{{ mov.motivo or '-' }}</small></td>
+                        <td><small>{{ mov.documento_referencia or '-' }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if movimientos.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not movimientos.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('movimientos', page=movimientos.prev_num, tipo=tipo_seleccionado) }}">Anterior</a>
+                </li>
+                
+                {% for page_num in movimientos.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == movimientos.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('movimientos', page=page_num, tipo=tipo_seleccionado) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not movimientos.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('movimientos', page=movimientos.next_num, tipo=tipo_seleccionado) }}">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">No hay movimientos registrados</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Categorías{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1><i class="bi bi-tags"></i> Categorías</h1>
+        <p class="text-muted">Gestión de categorías de productos</p>
+    </div>
+    <a href="{{ url_for('nueva_categoria') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nueva Categoría
+    </a>
+</div>
+
+<div class="row">
+    {% if categorias %}
+        {% for categoria in categorias %}
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title">
+                                <i class="bi bi-tag text-primary"></i> {{ categoria.nombre }}
+                            </h5>
+                            <p class="card-text text-muted small">
+                                {{ categoria.descripcion or 'Sin descripción' }}
+                            </p>
+                        </div>
+                        <span class="badge bg-primary">{{ categoria.productos|length }}</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ categoria.fecha_creacion.strftime('%d/%m/%Y') }}
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('editar_categoria', id=categoria.id) }}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-danger" onclick="confirmarEliminacion({{ categoria.id }}, '{{ categoria.nombre }}', {{ categoria.productos|length }})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-tags" style="font-size: 4rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">No hay categorías registradas</p>
+                <a href="{{ url_for('nueva_categoria') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Crear Primera Categoría
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="mensajeEliminar"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarEliminacion(id, nombre, numProductos) {
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    const mensaje = document.getElementById('mensajeEliminar');
+    
+    if (numProductos > 0) {
+        mensaje.innerHTML = `<div class="alert alert-warning">La categoría <strong>${nombre}</strong> tiene ${numProductos} producto(s) asociado(s). No se puede eliminar.</div>`;
+        document.getElementById('formEliminar').style.display = 'none';
+    } else {
+        mensaje.innerHTML = `¿Está seguro que desea eliminar la categoría <strong>${nombre}</strong>?`;
+        document.getElementById('formEliminar').style.display = 'inline';
+        document.getElementById('formEliminar').action = `/categorias/eliminar/${id}`;
+    }
+    
+    modal.show();
+}
+</script>
+{% endblock %}

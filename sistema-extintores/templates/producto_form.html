@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}{% if producto %}Editar{% else %}Nuevo{% endif %} Producto{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <i class="bi bi-box"></i> 
+        {% if producto %}Editar Producto{% else %}Nuevo Producto{% endif %}
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="productoForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Categoría <span class="text-danger">*</span></label>
+                            <select class="form-select" name="categoria_id" id="categoriaSelect" required onchange="generarCodigo()">
+                                <option value="">Seleccione una categoría</option>
+                                {% for cat in categorias %}
+                                <option value="{{ cat.id }}" data-nombre="{{ cat.nombre }}"
+                                    {% if producto and producto.categoria_id == cat.id %}selected{% endif %}>
+                                    {{ cat.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ubicación <span class="text-danger">*</span></label>
+                            <select class="form-select" name="ubicacion" id="ubicacionSelect" required onchange="generarCodigo()">
+                                <option value="">Seleccione ubicación</option>
+                                <option value="Oficina" {% if producto and producto.ubicacion == 'Oficina' %}selected{% endif %}>Oficina</option>
+                                <option value="Almacén" {% if producto and producto.ubicacion == 'Almacén' %}selected{% endif %}>Almacén</option>
+                                <option value="Taller" {% if producto and producto.ubicacion == 'Taller' %}selected{% endif %}>Taller</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Código Generado Automáticamente</label>
+                        <input type="text" class="form-control bg-light" name="codigo" id="codigoInput"
+                               value="{{ producto.codigo if producto else '' }}" readonly required>
+                        <small class="text-muted">
+                            {% if producto %}
+                            Código asignado (no se puede modificar)
+                            {% else %}
+                            Se generará automáticamente al seleccionar categoría y ubicación
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Producto <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="nombre" 
+                               value="{{ producto.nombre if producto else '' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="3">{{ producto.descripcion if producto else '' }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Unidad de Medida <span class="text-danger">*</span></label>
+                            <select class="form-select" name="unidad_medida" required>
+                                <option value="">Seleccione</option>
+                                <option value="unidad" {% if producto and producto.unidad_medida == 'unidad' %}selected{% endif %}>Unidad</option>
+                                <option value="caja" {% if producto and producto.unidad_medida == 'caja' %}selected{% endif %}>Caja</option>
+                                <option value="paquete" {% if producto and producto.unidad_medida == 'paquete' %}selected{% endif %}>Paquete</option>
+                                <option value="litro" {% if producto and producto.unidad_medida == 'litro' %}selected{% endif %}>Litro</option>
+                                <option value="kg" {% if producto and producto.unidad_medida == 'kg' %}selected{% endif %}>Kilogramo</option>
+                                <option value="metro" {% if producto and producto.unidad_medida == 'metro' %}selected{% endif %}>Metro</option>
+                                <option value="galón" {% if producto and producto.unidad_medida == 'galón' %}selected{% endif %}>Galón</option>
+                                <option value="set" {% if producto and producto.unidad_medida == 'set' %}selected{% endif %}>Set</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Stock Mínimo <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control" name="stock_minimo" 
+                                   value="{{ producto.stock_minimo if producto else '0' }}" required>
+                            <small class="text-muted">Alerta de reposición</small>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Precio Unitario <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">S/</span>
+                                <input type="number" step="0.01" class="form-control" name="precio_unitario" 
+                                       value="{{ producto.precio_unitario if producto else '0' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if not producto %}
+                    <div class="mb-3">
+                        <label class="form-label">Stock Inicial</label>
+                        <input type="number" step="0.01" class="form-control" name="stock_actual" value="0">
+                        <small class="text-muted">Cantidad inicial en inventario</small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('productos') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Producto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información
+            </div>
+            <div class="card-body">
+                <h6>Campos Obligatorios</h6>
+                <ul class="small">
+                    <li>Código del producto</li>
+                    <li>Nombre del producto</li>
+                    <li>Categoría</li>
+                    <li>Unidad de medida</li>
+                    <li>Stock mínimo</li>
+                    <li>Precio unitario</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Código Automático</h6>
+                <ul class="small">
+                    <li>El código se genera automáticamente</li>
+                    <li>Formato: <strong>CAT-UBI-NNNN</strong></li>
+                    <li>Ejemplo: <strong>001-TAL-0001</strong></li>
+                    <li><strong>CAT</strong> = ID de categoría (3 dígitos)</li>
+                    <li><strong>UBI</strong> = Ubicación (3 letras)</li>
+                    <li><strong>NNNN</strong> = Correlativo (4 dígitos, hasta 9999)</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Ubicaciones Disponibles</h6>
+                <ul class="small">
+                    <li><strong>Oficina:</strong> Útiles y equipos de oficina</li>
+                    <li><strong>Almacén:</strong> Insumos y stock general</li>
+                    <li><strong>Taller:</strong> Herramientas y equipos de trabajo</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Generar código automático
+function generarCodigo() {
+    {% if not producto %}
+    const categoriaSelect = document.getElementById('categoriaSelect');
+    const ubicacionSelect = document.getElementById('ubicacionSelect');
+    const codigoInput = document.getElementById('codigoInput');
+    
+    const categoriaId = categoriaSelect.value;
+    const ubicacion = ubicacionSelect.value;
+    
+    if (categoriaId && ubicacion) {
+        // Generar código temporal
+        codigoInput.value = 'Generando...';
+        
+        // Hacer petición AJAX para obtener el siguiente código
+        fetch(`/api/siguiente-codigo?categoria_id=${categoriaId}&ubicacion=${encodeURIComponent(ubicacion)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.codigo) {
+                    codigoInput.value = data.codigo;
+                } else if (data.error) {
+                    codigoInput.value = '';
+                    console.error('Error:', data.error);
+                }
+            })
+            .catch(error => {
+                codigoInput.value = '';
+                console.error('Error al generar código:', error);
+            });
+    } else {
+        codigoInput.value = '';
+    }
+    {% endif %}
+}
+
+// Generar código al cargar si ya hay selecciones
+document.addEventListener('DOMContentLoaded', function() {
+    {% if not producto %}
+    generarCodigo();
+    {% endif %}
+});
+</script>
+{% endblock %}

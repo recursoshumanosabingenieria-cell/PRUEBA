@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if tipo == 'entrada' %}Entrada de Stock
+    {% elif tipo == 'salida' %}Salida de Stock
+    {% else %}Ajuste de Stock{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        {% if tipo == 'entrada' %}
+        <i class="bi bi-plus-circle text-success"></i> Entrada de Stock
+        {% elif tipo == 'salida' %}
+        <i class="bi bi-dash-circle text-danger"></i> Salida de Stock
+        {% else %}
+        <i class="bi bi-gear text-warning"></i> Ajuste de Stock
+        {% endif %}
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Producto <span class="text-danger">*</span></label>
+                        <select class="form-select" name="producto_id" id="productoSelect" required onchange="mostrarInfoProducto()">
+                            <option value="">Seleccione un producto</option>
+                            {% for producto in productos %}
+                            <option value="{{ producto.id }}" 
+                                    data-stock="{{ producto.stock_actual }}"
+                                    data-unidad="{{ producto.unidad_medida }}"
+                                    data-precio="{{ producto.precio_unitario }}">
+                                {{ producto.codigo }} - {{ producto.nombre }} (Stock: {{ producto.stock_actual }} {{ producto.unidad_medida }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div id="infoProducto" class="alert alert-info" style="display: none;">
+                        <strong>Stock Actual:</strong> <span id="stockActual">0</span> <span id="unidadMedida"></span>
+                    </div>
+                    
+                    {% if tipo == 'ajuste' %}
+                    <div class="mb-3">
+                        <label class="form-label">Nuevo Stock <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" class="form-control" name="nuevo_stock" required>
+                        <small class="text-muted">Ingrese el nuevo valor del stock</small>
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label class="form-label">Cantidad <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" class="form-control" name="cantidad" required>
+                        <small class="text-muted">
+                            {% if tipo == 'entrada' %}
+                            Cantidad a ingresar al inventario
+                            {% else %}
+                            Cantidad a retirar del inventario
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Motivo <span class="text-danger">*</span></label>
+                        <select class="form-select" name="motivo" required>
+                            <option value="">Seleccione un motivo</option>
+                            {% if tipo == 'entrada' %}
+                            <option value="Compra">Compra</option>
+                            <option value="Devolución">Devolución</option>
+                            <option value="Donación">Donación</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Otro">Otro</option>
+                            {% elif tipo == 'salida' %}
+                            <option value="Uso en taller">Uso en taller</option>
+                            <option value="Venta">Venta</option>
+                            <option value="Préstamo">Préstamo</option>
+                            <option value="Merma">Merma</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Otro">Otro</option>
+                            {% else %}
+                            <option value="Inventario físico">Inventario físico</option>
+                            <option value="Corrección de error">Corrección de error</option>
+                            <option value="Producto dañado">Producto dañado</option>
+                            <option value="Otro">Otro</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    {% if tipo != 'ajuste' %}
+                    <div class="mb-3">
+                        <label class="form-label">Documento de Referencia</label>
+                        <input type="text" class="form-control" name="documento" placeholder="Ej: Factura N° 001-0001234">
+                        <small class="text-muted">Número de factura, guía, orden, etc.</small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea class="form-control" name="observaciones" rows="3" placeholder="Información adicional (opcional)"></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('movimientos') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-{% if tipo == 'entrada' %}success{% elif tipo == 'salida' %}danger{% else %}warning{% endif %}">
+                            <i class="bi bi-save"></i> Registrar Movimiento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información
+            </div>
+            <div class="card-body">
+                {% if tipo == 'entrada' %}
+                <h6>Entrada de Stock</h6>
+                <p class="small">Registre aquí las entradas de productos al inventario por compras, devoluciones u otros motivos.</p>
+                <ul class="small">
+                    <li>Seleccione el producto</li>
+                    <li>Ingrese la cantidad recibida</li>
+                    <li>Indique el motivo de la entrada</li>
+                    <li>Agregue el documento de referencia</li>
+                </ul>
+                {% elif tipo == 'salida' %}
+                <h6>Salida de Stock</h6>
+                <p class="small">Registre aquí las salidas de productos del inventario por uso, venta u otros motivos.</p>
+                <ul class="small">
+                    <li>Seleccione el producto</li>
+                    <li>Ingrese la cantidad utilizada</li>
+                    <li>Indique el motivo de la salida</li>
+                    <li>El sistema verificará el stock disponible</li>
+                </ul>
+                {% else %}
+                <h6>Ajuste de Stock</h6>
+                <p class="small">Use esta opción para corregir el stock después de un inventario físico o para ajustar diferencias.</p>
+                <ul class="small">
+                    <li>Seleccione el producto</li>
+                    <li>Ingrese el nuevo stock correcto</li>
+                    <li>Indique el motivo del ajuste</li>
+                    <li>El sistema calculará la diferencia</li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-{% if tipo == 'entrada' %}success{% elif tipo == 'salida' %}danger{% else %}warning{% endif %} text-white">
+                <i class="bi bi-lightbulb"></i> Consejo
+            </div>
+            <div class="card-body">
+                <p class="small mb-0">
+                    {% if tipo == 'entrada' %}
+                    Siempre registre las entradas con el documento de respaldo correspondiente (factura, guía, etc.).
+                    {% elif tipo == 'salida' %}
+                    Asegúrese de tener stock suficiente antes de registrar una salida. El sistema no permitirá salidas mayores al stock disponible.
+                    {% else %}
+                    Los ajustes deben realizarse con cuidado y solo cuando sea necesario corregir el inventario.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function mostrarInfoProducto() {
+    const select = document.getElementById('productoSelect');
+    const option = select.options[select.selectedIndex];
+    
+    if (option.value) {
+        const stock = option.getAttribute('data-stock');
+        const unidad = option.getAttribute('data-unidad');
+        
+        document.getElementById('stockActual').textContent = stock;
+        document.getElementById('unidadMedida').textContent = unidad;
+        document.getElementById('infoProducto').style.display = 'block';
+    } else {
+        document.getElementById('infoProducto').style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

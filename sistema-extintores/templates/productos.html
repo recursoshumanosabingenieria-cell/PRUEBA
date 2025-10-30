@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Productos{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1><i class="bi bi-box"></i> Productos</h1>
+        <p class="text-muted">Gestión de productos del inventario</p>
+    </div>
+    <a href="{{ url_for('nuevo_producto') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nuevo Producto
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Buscar</label>
+                <input type="text" class="form-control" name="busqueda" placeholder="Código o nombre del producto" value="{{ busqueda }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Categoría</label>
+                <select class="form-select" name="categoria">
+                    <option value="">Todas las categorías</option>
+                    {% for cat in categorias %}
+                    <option value="{{ cat.id }}" {% if cat.id == categoria_seleccionada %}selected{% endif %}>
+                        {{ cat.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+                <a href="{{ url_for('productos') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de productos -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-list"></i> Listado de Productos ({{ productos.total }} productos)
+    </div>
+    <div class="card-body">
+        {% if productos.items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Stock Actual</th>
+                        <th>Stock Mínimo</th>
+                        <th>Precio Unit.</th>
+                        <th>Valor Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos.items %}
+                    <tr>
+                        <td><strong>{{ producto.codigo }}</strong></td>
+                        <td>
+                            {{ producto.nombre }}
+                            {% if producto.ubicacion %}
+                            <br><small class="text-muted"><i class="bi bi-geo-alt"></i> {{ producto.ubicacion }}</small>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-info">{{ producto.categoria.nombre }}</span></td>
+                        <td>
+                            <strong>{{ producto.stock_actual }}</strong> {{ producto.unidad_medida }}
+                        </td>
+                        <td>{{ producto.stock_minimo }} {{ producto.unidad_medida }}</td>
+                        <td>S/ {{ "%.2f"|format(producto.precio_unitario) }}</td>
+                        <td><strong>S/ {{ "%.2f"|format(producto.valor_total) }}</strong></td>
+                        <td>
+                            {% if producto.stock_actual == 0 %}
+                            <span class="badge bg-danger">Agotado</span>
+                            {% elif producto.necesita_reposicion %}
+                            <span class="badge bg-warning">Stock Bajo</span>
+                            {% else %}
+                            <span class="badge bg-success">Normal</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('ver_producto', id=producto.id) }}" class="btn btn-info" title="Ver detalles">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('editar_producto', id=producto.id) }}" class="btn btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger" onclick="confirmarEliminacion({{ producto.id }})" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if productos.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not productos.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('productos', page=productos.prev_num, categoria=categoria_seleccionada, busqueda=busqueda) }}">Anterior</a>
+                </li>
+                
+                {% for page_num in productos.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == productos.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('productos', page=page_num, categoria=categoria_seleccionada, busqueda=busqueda) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not productos.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('productos', page=productos.next_num, categoria=categoria_seleccionada, busqueda=busqueda) }}">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">No se encontraron productos</p>
+            <a href="{{ url_for('nuevo_producto') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Agregar Primer Producto
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro que desea eliminar este producto?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarEliminacion(id) {
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    document.getElementById('formEliminar').action = `/productos/eliminar/${id}`;
+    modal.show();
+}
+</script>
+{% endblock %}

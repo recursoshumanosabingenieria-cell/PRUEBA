@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}{% if categoria %}Editar{% else %}Nueva{% endif %} Categoría{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <i class="bi bi-tags"></i> 
+        {% if categoria %}Editar Categoría{% else %}Nueva Categoría{% endif %}
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de la Categoría <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="nombre" 
+                               value="{{ categoria.nombre if categoria else '' }}" required autofocus>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="4">{{ categoria.descripcion if categoria else '' }}</textarea>
+                        <small class="text-muted">Descripción opcional de la categoría</small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('categorias') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Categoría
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información
+            </div>
+            <div class="card-body">
+                <h6>Categorías Sugeridas</h6>
+                <ul class="small">
+                    <li><strong>Herramientas:</strong> Llaves, destornilladores, taladros</li>
+                    <li><strong>Equipos:</strong> Compresores, soldadoras, máquinas</li>
+                    <li><strong>Insumos Químicos:</strong> Polvo químico, CO2, espuma</li>
+                    <li><strong>Materiales:</strong> Mangueras, válvulas, manómetros</li>
+                    <li><strong>Papelería:</strong> Hojas, lapiceros, archivadores</li>
+                    <li><strong>EPPs:</strong> Cascos, guantes, lentes de seguridad</li>
+                    <li><strong>Repuestos:</strong> Piezas de recambio</li>
+                    <li><strong>Mobiliario:</strong> Escritorios, sillas, estantes</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Consejos</h6>
+                <ul class="small">
+                    <li>Use nombres descriptivos y claros</li>
+                    <li>Evite crear demasiadas categorías</li>
+                    <li>Agrupe productos similares</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

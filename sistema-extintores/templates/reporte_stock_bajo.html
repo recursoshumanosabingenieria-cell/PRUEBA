@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte de Stock Bajo{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header no-print d-flex justify-content-between align-items-center">
+    <div>
+        <h1><i class="bi bi-exclamation-triangle text-danger"></i> Reporte de Stock Bajo</h1>
+        <p class="text-muted">Productos que necesitan reposición</p>
+    </div>
+    <div>
+        <button onclick="window.print()" class="btn btn-primary">
+            <i class="bi bi-printer"></i> Imprimir
+        </button>
+        <a href="{{ url_for('reportes') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="mb-0">AB Ingeniería S.A.C</h5>
+                <small>Reporte de Productos con Stock Bajo</small>
+            </div>
+            <div class="col-md-6 text-end">
+                <small>Fecha: {{ now.strftime('%d/%m/%Y %H:%M') if now else '' }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if productos %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> 
+            Se encontraron <strong>{{ productos|length }}</strong> producto(s) con stock bajo o agotado.
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Stock Actual</th>
+                        <th>Stock Mínimo</th>
+                        <th>Diferencia</th>
+                        <th>Estado</th>
+                        <th>Ubicación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ producto.codigo }}</strong></td>
+                        <td>{{ producto.nombre }}</td>
+                        <td><span class="badge bg-info">{{ producto.categoria.nombre }}</span></td>
+                        <td class="text-center">
+                            <strong {% if producto.stock_actual == 0 %}class="text-danger"{% endif %}>
+                                {{ producto.stock_actual }}
+                            </strong> {{ producto.unidad_medida }}
+                        </td>
+                        <td class="text-center">{{ producto.stock_minimo }} {{ producto.unidad_medida }}</td>
+                        <td class="text-center text-danger">
+                            <strong>{{ producto.stock_minimo - producto.stock_actual }}</strong> {{ producto.unidad_medida }}
+                        </td>
+                        <td class="text-center">
+                            {% if producto.stock_actual == 0 %}
+                            <span class="badge bg-danger">Agotado</span>
+                            {% else %}
+                            <span class="badge bg-warning">Stock Bajo</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ producto.ubicacion or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h6>Resumen:</h6>
+                <ul>
+                    <li>Total de productos con stock bajo: <strong>{{ productos|length }}</strong></li>
+                    <li>Productos agotados: <strong>{{ productos|selectattr('stock_actual', 'equalto', 0)|list|length }}</strong></li>
+                    <li>Productos con stock bajo: <strong>{{ productos|rejectattr('stock_actual', 'equalto', 0)|list|length }}</strong></li>
+                </ul>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+            <h4 class="mt-3">¡Excelente!</h4>
+            <p class="text-muted">Todos los productos tienen stock suficiente</p>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-footer text-muted small">
+        <i class="bi bi-info-circle"></i> Este reporte muestra los productos cuyo stock actual es igual o menor al stock mínimo configurado.
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Agregar fecha actual al imprimir
+window.addEventListener('beforeprint', function() {
+    const now = new Date();
+    const fecha = now.toLocaleDateString('es-PE') + ' ' + now.toLocaleTimeString('es-PE');
+    document.querySelectorAll('.fecha-impresion').forEach(el => el.textContent = fecha);
+});
+</script>
+{% endblock %}

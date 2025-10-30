@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+    <p class="text-muted">Resumen general del inventario</p>
+</div>
+
+<!-- Estadísticas principales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Total Productos</h6>
+                        <h2 class="mb-0">{{ total_productos }}</h2>
+                    </div>
+                    <div class="text-primary" style="font-size: 2.5rem;">
+                        <i class="bi bi-box"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Categorías</h6>
+                        <h2 class="mb-0">{{ total_categorias }}</h2>
+                    </div>
+                    <div class="text-success" style="font-size: 2.5rem;">
+                        <i class="bi bi-tags"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Stock Bajo</h6>
+                        <h2 class="mb-0">{{ productos_bajo_stock|length }}</h2>
+                    </div>
+                    <div class="text-danger" style="font-size: 2.5rem;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Valor Total</h6>
+                        <h2 class="mb-0">S/ {{ "%.2f"|format(valor_total) }}</h2>
+                    </div>
+                    <div class="text-warning" style="font-size: 2.5rem;">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Productos con stock bajo -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-exclamation-triangle text-danger"></i> Productos con Stock Bajo</span>
+                <a href="{{ url_for('reporte_stock_bajo') }}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+            </div>
+            <div class="card-body">
+                {% if productos_bajo_stock %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Stock Actual</th>
+                                <th>Stock Mínimo</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos_bajo_stock[:5] %}
+                            <tr>
+                                <td>
+                                    <strong>{{ producto.nombre }}</strong><br>
+                                    <small class="text-muted">{{ producto.codigo }}</small>
+                                </td>
+                                <td>{{ producto.stock_actual }} {{ producto.unidad_medida }}</td>
+                                <td>{{ producto.stock_minimo }} {{ producto.unidad_medida }}</td>
+                                <td>
+                                    {% if producto.stock_actual == 0 %}
+                                    <span class="badge bg-danger">Agotado</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Bajo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">Todos los productos tienen stock suficiente</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Últimos movimientos -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-arrow-left-right"></i> Últimos Movimientos</span>
+                <a href="{{ url_for('movimientos') }}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+            </div>
+            <div class="card-body">
+                {% if ultimos_movimientos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Tipo</th>
+                                <th>Cantidad</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mov in ultimos_movimientos %}
+                            <tr>
+                                <td>
+                                    <strong>{{ mov.producto.nombre }}</strong><br>
+                                    <small class="text-muted">{{ mov.usuario.nombre_completo }}</small>
+                                </td>
+                                <td>
+                                    {% if mov.tipo_movimiento == 'entrada' %}
+                                    <span class="badge bg-success">Entrada</span>
+                                    {% elif mov.tipo_movimiento == 'salida' %}
+                                    <span class="badge bg-danger">Salida</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Ajuste</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mov.cantidad }} {{ mov.producto.unidad_medida }}</td>
+                                <td><small>{{ mov.fecha_movimiento.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No hay movimientos registrados</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Productos más movidos -->
+{% if productos_top %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up"></i> Productos Más Movidos
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Producto</th>
+                                <th>Total Movimientos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto, total in productos_top %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ producto }}</td>
+                                <td><span class="badge bg-primary">{{ total }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Acciones rápidas -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning"></i> Acciones Rápidas
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('nuevo_producto') }}" class="btn btn-outline-primary btn-lg w-100 mb-2">
+                            <i class="bi bi-plus-circle"></i><br>
+                            Nuevo Producto
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('entrada_stock') }}" class="btn btn-outline-success btn-lg w-100 mb-2">
+                            <i class="bi bi-box-arrow-in-down"></i><br>
+                            Entrada de Stock
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('salida_stock') }}" class="btn btn-outline-danger btn-lg w-100 mb-2">
+                            <i class="bi bi-box-arrow-up"></i><br>
+                            Salida de Stock
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('reportes') }}" class="btn btn-outline-info btn-lg w-100 mb-2">
+                            <i class="bi bi-file-earmark-text"></i><br>
+                            Ver Reportes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
