@@ -1,57 +1,97 @@
-# Sistema de Gestión de Extintores
+# 📦 Sistema de Inventario - AB Ingeniería
 
-Sistema web para la gestión integral de extintores, mantenimientos y órdenes de trabajo con sincronización en tiempo real.
+Sistema web de gestión de inventario desarrollado con Flask para AB Ingeniería S.A.C.
 
-## Características
+## 🚀 Características
 
-- **Gestión de Órdenes**: 5 etapas (Creación → Asignación → Recojo → Registro → Revisión)
-- **Sincronización en Tiempo Real**: Cambios instantáneos entre dispositivos
-- **Evidencia Fotográfica**: Captura y gestión de fotos
-- **Catálogo de Extintores**: Tipos con colores distintivos, capacidades y marcas
-- **Tabla Editable**: Auto-guardado inteligente para registro de extintores
-- **Generación de PDFs**: Documentos profesionales
-- **Soporte HTTPS**: Acceso seguro desde red local
+- ✅ Gestión de productos con códigos automáticos
+- ✅ Control de stock (entradas, salidas, ajustes)
+- ✅ Categorización de productos
+- ✅ Sistema de usuarios con roles (admin/usuario)
+- ✅ Reportes y exportación a Excel
+- ✅ Alertas de stock bajo
+- ✅ Historial de movimientos
+- ✅ Interfaz responsive (PC y móvil)
 
-## Instalación
+## 📋 Requisitos
 
-### Requisitos
-- Python 3.8+
-- pip
+- Python 3.8 o superior
+- pip (gestor de paquetes de Python)
 
-### Pasos
+## 🔧 Instalación y Uso
 
-1. Clonar el repositorio
-2. Instalar dependencias: `pip install -r requirements.txt`
-3. Copiar `.env.example` a `.env` y configurar
-4. Inicializar catálogo: `python poblar_catalogo.py`
-5. (Opcional) Generar certificados SSL: `python generar_certificado_ssl.py`
+### 1. Instalar dependencias
 
-## Uso
+```bash
+pip install -r requirements.txt
+```
 
-**Modo HTTP:**
+### 2. Ejecutar la aplicación
+
+**Opción A: Usando el script de inicio (Windows)**
+```bash
+iniciar.bat
+```
+
+**Opción B: Manualmente**
 ```bash
 python app.py
 ```
-Acceder a: `http://localhost:5000`
 
-**Modo HTTPS (red local):**
-```bash
-python app_https.py
+La aplicación estará disponible en: http://localhost:5000
+
+## 👤 Acceso Inicial
+
+**Usuario por defecto:**
+- Usuario: `admin`
+- Contraseña: `admin123`
+
+⚠️ **Importante:** Cambia la contraseña después del primer acceso.
+
+## 📁 Estructura del Proyecto
+
 ```
-Acceder a: `https://localhost:5000`
-
-**Windows:**
-```bash
-iniciar_app.bat
+inventario/
+├── app.py                 # Aplicación principal
+├── models.py              # Modelos de base de datos
+├── config.py              # Configuración
+├── requirements.txt       # Dependencias
+├── iniciar.bat           # Script de inicio (Windows)
+├── templates/            # Plantillas HTML
+├── static/              # Archivos estáticos
+└── instance/            # Base de datos SQLite
+    └── inventario.db
 ```
 
-## Tecnologías
+## 💾 Respaldo de Datos
 
-- Flask + Flask-SocketIO
-- SQLite
-- Bootstrap 5 + jQuery
-- ReportLab (PDFs)
+**Ubicación de la base de datos:** `instance/inventario.db`
 
-## Licencia
+**Para hacer respaldo manual:**
+1. Copia el archivo `instance/inventario.db`
+2. Guárdalo en un lugar seguro (OneDrive, USB, etc.)
+3. Para restaurar, reemplaza el archivo
 
-Uso privado - AB INGENIERIA S.A.C.
+## 🛠️ Tecnologías Utilizadas
+
+- **Backend**: Flask 3.0
+- **Base de datos**: SQLite
+- **ORM**: SQLAlchemy
+- **Autenticación**: Flask-Login
+- **Frontend**: Bootstrap 5
+- **Exportación**: openpyxl
+
+## 🐛 Solución de Problemas
+
+### Error: "No module named 'flask'"
+```bash
+pip install -r requirements.txt
+```
+
+### Error: "Database is locked"
+- Cierra otras instancias de la aplicación
+- Reinicia el servidor
+
+---
+
+**Desarrollado por AB Ingeniería S.A.C. - 2024**
