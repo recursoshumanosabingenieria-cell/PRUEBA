@@ -5,6 +5,9 @@ Sistema web de gestión de inventario desarrollado con Flask para AB Ingeniería
 ## 🚀 Características
 
 - ✅ Gestión de productos con códigos automáticos
+- ✅ **NUEVO:** Soporte de modelos y variantes de productos
+- ✅ **NUEVO:** Gestión de colores por modelo
+- ✅ **NUEVO:** Características personalizadas (talla, material, voltaje, etc.)
 - ✅ Control de stock (entradas, salidas, ajustes)
 - ✅ Categorización de productos
 - ✅ Sistema de usuarios con roles (admin/usuario)
@@ -39,6 +42,12 @@ python app.py
 ```
 
 La aplicación estará disponible en: http://localhost:5000
+
+### 3. Despliegue en Render
+
+La aplicación está lista para desplegarse en Render. Asegúrate de:
+- Configurar las variables de entorno necesarias
+- La base de datos se creará automáticamente en el primer inicio
 
 ## 👤 Acceso Inicial
 

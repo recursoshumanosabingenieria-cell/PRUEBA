@@ -58,11 +58,15 @@ class Producto(db.Model):
     stock_minimo = db.Column(db.Float, default=0)
     precio_unitario = db.Column(db.Float, default=0)
     ubicacion = db.Column(db.String(100))  # Estante, almacén, etc.
+    tiene_modelos = db.Column(db.Boolean, default=False)  # Indica si el producto maneja modelos
+    tiene_colores = db.Column(db.Boolean, default=False)  # Indica si el producto maneja colores
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     movimientos = db.relationship('Movimiento', backref='producto', lazy=True)
+    modelos = db.relationship('ProductoModelo', backref='producto', lazy=True, cascade='all, delete-orphan')
+    caracteristicas = db.relationship('ProductoCaracteristica', backref='producto', lazy=True, cascade='all, delete-orphan')
     
     @property
     def valor_total(self):
@@ -76,11 +80,64 @@ class Producto(db.Model):
         return f'<Producto {self.codigo} - {self.nombre}>'
 
 
+class ProductoModelo(db.Model):
+    __tablename__ = 'producto_modelos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
+    nombre_modelo = db.Column(db.String(100), nullable=False)
+    codigo_modelo = db.Column(db.String(50))  # Código específico del modelo
+    descripcion = db.Column(db.Text)
+    stock_actual = db.Column(db.Float, default=0)
+    precio_diferencial = db.Column(db.Float, default=0)  # Diferencia de precio respecto al producto base
+    activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    colores = db.relationship('ProductoColor', backref='modelo', lazy=True, cascade='all, delete-orphan')
+    
+    @property
+    def precio_final(self):
+        return self.producto.precio_unitario + self.precio_diferencial
+    
+    def __repr__(self):
+        return f'<ProductoModelo {self.nombre_modelo}>'
+
+
+class ProductoColor(db.Model):
+    __tablename__ = 'producto_colores'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    modelo_id = db.Column(db.Integer, db.ForeignKey('producto_modelos.id'), nullable=False)
+    nombre_color = db.Column(db.String(50), nullable=False)
+    codigo_color = db.Column(db.String(20))  # Código hexadecimal o referencia
+    stock_actual = db.Column(db.Float, default=0)
+    activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<ProductoColor {self.nombre_color}>'
+
+
+class ProductoCaracteristica(db.Model):
+    __tablename__ = 'producto_caracteristicas'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
+    nombre = db.Column(db.String(100), nullable=False)  # Ej: "Talla", "Material", "Voltaje"
+    valor = db.Column(db.String(200), nullable=False)  # Ej: "XL", "Acero", "220V"
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<ProductoCaracteristica {self.nombre}: {self.valor}>'
+
+
 class Movimiento(db.Model):
     __tablename__ = 'movimientos'
     
     id = db.Column(db.Integer, primary_key=True)
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
+    modelo_id = db.Column(db.Integer, db.ForeignKey('producto_modelos.id'), nullable=True)  # Opcional si el movimiento es de un modelo específico
+    color_id = db.Column(db.Integer, db.ForeignKey('producto_colores.id'), nullable=True)  # Opcional si el movimiento es de un color específico
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     tipo_movimiento = db.Column(db.String(20), nullable=False)  # entrada, salida, ajuste
     cantidad = db.Column(db.Float, nullable=False)

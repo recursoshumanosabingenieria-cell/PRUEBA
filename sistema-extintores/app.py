@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, Usuario, Categoria, Producto, Movimiento
+from models import db, Usuario, Categoria, Producto, Movimiento, ProductoModelo, ProductoColor, ProductoCaracteristica
 from config import Config
 from datetime import datetime
 from sqlalchemy import func, desc
 import os
+import json
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -206,6 +207,8 @@ def nuevo_producto():
         stock_minimo = float(request.form.get('stock_minimo', 0))
         precio_unitario = float(request.form.get('precio_unitario', 0))
         ubicacion = request.form.get('ubicacion')
+        tiene_modelos = request.form.get('tiene_modelos') == 'on'
+        tiene_colores = request.form.get('tiene_colores') == 'on'
         
         if Producto.query.filter_by(codigo=codigo).first():
             flash('Ya existe un producto con ese código', 'warning')
@@ -220,10 +223,29 @@ def nuevo_producto():
             stock_actual=stock_actual,
             stock_minimo=stock_minimo,
             precio_unitario=precio_unitario,
-            ubicacion=ubicacion
+            ubicacion=ubicacion,
+            tiene_modelos=tiene_modelos,
+            tiene_colores=tiene_colores
         )
         
         db.session.add(producto)
+        db.session.flush()  # Para obtener el ID del producto
+        
+        # Guardar características personalizadas
+        caracteristicas_json = request.form.get('caracteristicas_data', '[]')
+        try:
+            caracteristicas = json.loads(caracteristicas_json)
+            for caract in caracteristicas:
+                if caract.get('nombre') and caract.get('valor'):
+                    caracteristica = ProductoCaracteristica(
+                        producto_id=producto.id,
+                        nombre=caract['nombre'],
+                        valor=caract['valor']
+                    )
+                    db.session.add(caracteristica)
+        except json.JSONDecodeError:
+            pass
+        
         db.session.commit()
         
         # Registrar movimiento inicial si hay stock
@@ -241,7 +263,7 @@ def nuevo_producto():
             db.session.commit()
         
         flash('Producto creado exitosamente', 'success')
-        return redirect(url_for('productos'))
+        return redirect(url_for('ver_producto', id=producto.id))
     
     categorias = Categoria.query.filter_by(activo=True).all()
     return render_template('producto_form.html', producto=None, categorias=categorias)
@@ -260,6 +282,8 @@ def editar_producto(id):
         stock_minimo = float(request.form.get('stock_minimo', 0))
         precio_unitario = float(request.form.get('precio_unitario', 0))
         ubicacion = request.form.get('ubicacion')
+        tiene_modelos = request.form.get('tiene_modelos') == 'on'
+        tiene_colores = request.form.get('tiene_colores') == 'on'
         
         # Verificar si el código ya existe (excepto para este producto)
         existe = Producto.query.filter(Producto.codigo == codigo, Producto.id != id).first()
@@ -275,11 +299,32 @@ def editar_producto(id):
         producto.stock_minimo = stock_minimo
         producto.precio_unitario = precio_unitario
         producto.ubicacion = ubicacion
+        producto.tiene_modelos = tiene_modelos
+        producto.tiene_colores = tiene_colores
+        
+        # Actualizar características
+        # Eliminar características existentes
+        ProductoCaracteristica.query.filter_by(producto_id=producto.id).delete()
+        
+        # Agregar nuevas características
+        caracteristicas_json = request.form.get('caracteristicas_data', '[]')
+        try:
+            caracteristicas = json.loads(caracteristicas_json)
+            for caract in caracteristicas:
+                if caract.get('nombre') and caract.get('valor'):
+                    caracteristica = ProductoCaracteristica(
+                        producto_id=producto.id,
+                        nombre=caract['nombre'],
+                        valor=caract['valor']
+                    )
+                    db.session.add(caracteristica)
+        except json.JSONDecodeError:
+            pass
         
         db.session.commit()
         
         flash('Producto actualizado exitosamente', 'success')
-        return redirect(url_for('productos'))
+        return redirect(url_for('ver_producto', id=producto.id))
     
     categorias = Categoria.query.filter_by(activo=True).all()
     return render_template('producto_form.html', producto=producto, categorias=categorias)
@@ -300,6 +345,110 @@ def eliminar_producto(id):
     
     flash('Producto eliminado exitosamente', 'success')
     return redirect(url_for('productos'))
+
+# ==================== MODELOS DE PRODUCTOS ====================
+
+@app.route('/productos/<int:producto_id>/modelos/nuevo', methods=['GET', 'POST'])
+@login_required
+def nuevo_modelo(producto_id):
+    producto = Producto.query.get_or_404(producto_id)
+    
+    if not producto.tiene_modelos:
+        flash('Este producto no está configurado para manejar modelos', 'warning')
+        return redirect(url_for('ver_producto', id=producto_id))
+    
+    if request.method == 'POST':
+        nombre_modelo = request.form.get('nombre_modelo')
+        codigo_modelo = request.form.get('codigo_modelo')
+        descripcion = request.form.get('descripcion')
+        stock_actual = float(request.form.get('stock_actual', 0))
+        precio_diferencial = float(request.form.get('precio_diferencial', 0))
+        
+        modelo = ProductoModelo(
+            producto_id=producto_id,
+            nombre_modelo=nombre_modelo,
+            codigo_modelo=codigo_modelo,
+            descripcion=descripcion,
+            stock_actual=stock_actual,
+            precio_diferencial=precio_diferencial
+        )
+        
+        db.session.add(modelo)
+        db.session.flush()
+        
+        # Si el producto también maneja colores, agregar colores al modelo
+        if producto.tiene_colores:
+            colores_json = request.form.get('colores_data', '[]')
+            try:
+                colores = json.loads(colores_json)
+                for color_data in colores:
+                    if color_data.get('nombre'):
+                        color = ProductoColor(
+                            modelo_id=modelo.id,
+                            nombre_color=color_data['nombre'],
+                            codigo_color=color_data.get('codigo', ''),
+                            stock_actual=float(color_data.get('stock', 0))
+                        )
+                        db.session.add(color)
+            except json.JSONDecodeError:
+                pass
+        
+        db.session.commit()
+        
+        flash(f'Modelo "{nombre_modelo}" agregado exitosamente', 'success')
+        return redirect(url_for('ver_producto', id=producto_id))
+    
+    return render_template('modelo_form.html', producto=producto, modelo=None)
+
+@app.route('/productos/<int:producto_id>/modelos/<int:modelo_id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_modelo(producto_id, modelo_id):
+    producto = Producto.query.get_or_404(producto_id)
+    modelo = ProductoModelo.query.get_or_404(modelo_id)
+    
+    if request.method == 'POST':
+        modelo.nombre_modelo = request.form.get('nombre_modelo')
+        modelo.codigo_modelo = request.form.get('codigo_modelo')
+        modelo.descripcion = request.form.get('descripcion')
+        modelo.precio_diferencial = float(request.form.get('precio_diferencial', 0))
+        
+        # Actualizar colores si aplica
+        if producto.tiene_colores:
+            # Eliminar colores existentes
+            ProductoColor.query.filter_by(modelo_id=modelo.id).delete()
+            
+            # Agregar nuevos colores
+            colores_json = request.form.get('colores_data', '[]')
+            try:
+                colores = json.loads(colores_json)
+                for color_data in colores:
+                    if color_data.get('nombre'):
+                        color = ProductoColor(
+                            modelo_id=modelo.id,
+                            nombre_color=color_data['nombre'],
+                            codigo_color=color_data.get('codigo', ''),
+                            stock_actual=float(color_data.get('stock', 0))
+                        )
+                        db.session.add(color)
+            except json.JSONDecodeError:
+                pass
+        
+        db.session.commit()
+        
+        flash(f'Modelo "{modelo.nombre_modelo}" actualizado exitosamente', 'success')
+        return redirect(url_for('ver_producto', id=producto_id))
+    
+    return render_template('modelo_form.html', producto=producto, modelo=modelo)
+
+@app.route('/productos/<int:producto_id>/modelos/<int:modelo_id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_modelo(producto_id, modelo_id):
+    modelo = ProductoModelo.query.get_or_404(modelo_id)
+    modelo.activo = False
+    db.session.commit()
+    
+    flash('Modelo eliminado exitosamente', 'success')
+    return redirect(url_for('ver_producto', id=producto_id))
 
 # ==================== MOVIMIENTOS ====================
 
