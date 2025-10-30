@@ -19,6 +19,49 @@ login_manager.login_message = 'Por favor inicia sesión para acceder a esta pág
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
 
+# ==================== INICIALIZACIÓN DE BASE DE DATOS ====================
+
+@app.route('/init-database-secret-route-2024')
+def init_database():
+    """Ruta temporal para inicializar la base de datos en producción"""
+    try:
+        # Crear todas las tablas
+        db.create_all()
+        
+        # Verificar si ya existe un usuario admin
+        admin = Usuario.query.filter_by(username='admin').first()
+        
+        if not admin:
+            # Crear usuario administrador por defecto
+            admin = Usuario(
+                username='admin',
+                nombre_completo='Administrador',
+                email='admin@abingenieria.com',
+                rol='admin',
+                activo=True
+            )
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            return jsonify({
+                'status': 'success',
+                'message': 'Base de datos inicializada correctamente',
+                'usuario': 'admin',
+                'password': 'admin123',
+                'warning': 'IMPORTANTE: Cambia esta contraseña después del primer login'
+            })
+        else:
+            return jsonify({
+                'status': 'success',
+                'message': 'Base de datos ya está inicializada',
+                'info': 'Usuario administrador ya existe'
+            })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 # ==================== RUTAS DE AUTENTICACIÓN ====================
 
 @app.route('/login', methods=['GET', 'POST'])
